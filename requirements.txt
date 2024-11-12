@@ -1,4 +1,6 @@
 brainflow
+numpy
+scikit-learn
 
 # PyQt5==5.15.7
 # PyQt5-Qt5==5.15.2
