@@ -83,5 +83,5 @@ class FoCAA_KNN:
             for indVal in range(0, n_components):
                 corr[indVal] = np.corrcoef(O1_a[:, indVal], O1_b[:, indVal])[0, 1]
             result[freqIdx] = np.max(corr)
-        print(result)
+        # print(result)
         return result

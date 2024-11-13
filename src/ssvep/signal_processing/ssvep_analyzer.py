@@ -2,8 +2,9 @@ import time
 import numpy as np
 import signal
 import serial.tools.list_ports
+import recording
 
-from functools import partial
+# from functools import partial
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 
 from processing import DataProcessor
@@ -16,11 +17,12 @@ class SSVEPAnalyzer:
         board_shim: BoardShim,
         frequencies: list,
         channels: list,
+        channel_names: list,
         gain_value: int = 12,
         buffer_size: int = 450000,
         cca_buffer_size: int = 1000,
         n_components: int = 1,
-    ):
+    ) -> None:
         """SSVEP Analyzer
 
         Uses FoCAA-KNN pipeline
@@ -41,12 +43,13 @@ class SSVEPAnalyzer:
         )
         self.n_components = n_components
         self.channels = channels
+        self.channel_names = channel_names
         self.gain_value = gain_value
         self.buffer_size = buffer_size
         self.cca_buffer_size = cca_buffer_size
         self._run = True
 
-    def initialize(self):
+    def initialize(self) -> None:
         """Prepare the board and enable channels
 
         _extended_summary_
@@ -63,8 +66,22 @@ class SSVEPAnalyzer:
             )  # change to logging
             time.sleep(1)
 
-    def run(self):
+    def run(self) -> None:
         self.initialize()
+
+        eeg_writer, eeg_csv_file = recording.initialize_writer(
+            file_name="./data/processed_eeg_data", header=self.channel_names
+        )
+
+        # sk_cca_csv_header = s
+
+        sk_cca_writer, sk_cca_csv = recording.initialize_writer(
+            file_name="./data/sk_cca_data", header=self.frequencies
+        )
+
+        # custom_cca_writer, custom_cca_csv = recording.initialize_writer(
+        #     file_name="custom_cca_data", header=self.frequencies
+        # )
 
         focca_knn = FoCAA_KNN(
             self.n_components,
@@ -85,20 +102,28 @@ class SSVEPAnalyzer:
 
             data = data_processor.process_data(data)
 
+            eeg_writer.writerows(data.T)
+
             result = focca_knn.findCorr(self.n_components, data)
+
+            sk_cca_writer.writerow(result)
 
             predictedClass = np.argmax(result) + 1
             print(predictedClass)
 
             time.sleep(1)
 
+        recording.uninitialize_writer(eeg_csv_file)
+        recording.uninitialize_writer(sk_cca_csv)
+        # recording.uninitialize_writer(custom_cca_csv)
+
         self.uninitialize()
 
-    def stop(self, sig, frame):
+    def stop(self, sig, frame) -> None:
         print("Stopping SSVEP Analyzer....")
         self._run = False
 
-    def uninitialize(self):
+    def uninitialize(self) -> None:
         print("Unitializing...")
         for channel in self.channels:
             self.board_shim.config_board(f"choff_{channel}")
@@ -119,9 +144,14 @@ if __name__ == "__main__":
 
     board = BoardShim(BoardIds.NEUROPAWN_KNIGHT_BOARD, params)
 
-    channels = [1, 2, 3]
+    channels = [
+        1,
+        2,
+        3,
+    ]  # Todo: Right now this script assumes there are only 3 channels and they are connected to the board in consecutive order
+    channel_names = ["O1", "Oz", "O2"]
 
-    ssvep_analyzer = SSVEPAnalyzer(board, frequencies, channels)
+    ssvep_analyzer = SSVEPAnalyzer(board, frequencies, channels, channel_names)
 
     signal.signal(signal.SIGINT, ssvep_analyzer.stop)
 

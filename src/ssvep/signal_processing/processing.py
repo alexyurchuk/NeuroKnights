@@ -9,7 +9,7 @@ class DataProcessor:
 
     def process_data(self, data: np.ndarray) -> np.ndarray:
         for i in range(0, len(data)):
-            DataFilter.detrend(data[i], DetrendOperations.CONSTANT)
+            DataFilter.detrend(data[i], DetrendOperations.CONSTANT.value)
             DataFilter.perform_bandpass(
                 data=data[i],
                 sampling_rate=self.sampling_rate,
