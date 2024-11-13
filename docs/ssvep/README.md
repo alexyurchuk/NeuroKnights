@@ -10,6 +10,9 @@ Implementing the canonical correlation analysis (CCA) algorithm to classify SSVE
 5. Currently following this study: [Classification of SSVEP signals using the combined FoCCA-KNN method and comparison with other machine learning methods](https://www.sciencedirect.com/science/article/abs/pii/S1746809423003907) (if access is needed go to UAlberta's Library)
 6. https://www.sciencedirect.com/science/article/pii/S1746809418301629
 
+7. [This kind person](https://github.com/RezaSaadatyar) not only nicely organized everything but also wrote a very impressive code with impressive formatting: [link to the repo](https://github.com/RezaSaadatyar/SSVEP-based-EEG-signal-processing).
+8. https://neuraldatascience.io/7-eeg/erp_artifacts.html#muscle-contractions
+
 
 
 
