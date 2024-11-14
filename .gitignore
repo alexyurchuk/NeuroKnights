@@ -1,2 +1,3 @@
 **/*venv
 **/*_env
+src/ssvep/signal_processing/data/**
