@@ -37,7 +37,7 @@ class SSVEPAnalyzer:
             n_components (int, optional): _description_. Defaults to 1.
         """
         self.board_shim = board_shim
-        self.frequencies = map(float, frequencies)
+        self.frequencies = list(map(float, frequencies))
         self.sampling_rate = BoardShim.get_sampling_rate(
             board_id=board_shim.get_board_id()
         )
@@ -76,11 +76,12 @@ class SSVEPAnalyzer:
         # sk_cca_csv_header = s
 
         sk_cca_writer, sk_cca_csv = recording.initialize_writer(
-            file_name="./data/sk_cca_data", header=self.frequencies
+            file_name="./data/sk_cca_data",
+            header=self.frequencies + ["Stimuli", "Freq", "Time"],
         )
 
         # custom_cca_writer, custom_cca_csv = recording.initialize_writer(
-        #     file_name="custom_cca_data", header=self.frequencies
+        #     file_name="./data/custom_cca_data", header=self.frequencies
         # )
 
         focca_knn = FoCAA_KNN(
@@ -100,15 +101,42 @@ class SSVEPAnalyzer:
                 1:4  # dont forget to change this
             ]
 
-            data = data_processor.process_data(data)
+            t_stamp = time.time()
 
-            eeg_writer.writerows(data.T)
+            data = data_processor.process_data(
+                data
+            )  # returns transpose of processed data
 
-            result = focca_knn.findCorr(self.n_components, data)
+            # eeg_writer.writerows(data)
+            recording.record_eeg_data(writer=eeg_writer, data=data)
 
-            sk_cca_writer.writerow(result)
+            sk_result = focca_knn.sk_findCorr(self.n_components, data)
 
-            predictedClass = np.argmax(result) + 1
+            # sk_cca_writer.writerow(sk_result)
+            recording.record_cca_data(
+                writer=sk_cca_writer,
+                cca_coefs=sk_result,
+                stimuli=True,
+                frequency=0.0,  # TODO
+                time=t_stamp,
+            )
+
+            cca_analysis_result = focca_knn.cca_analysis(data=data)
+
+            print("=" * 100)
+            print("Sk:", sk_result)
+            print("Custom: ", cca_analysis_result)
+            print("=" * 100)
+
+            # recording.record_cca_data(
+            #     writer=custom_cca_writer,
+            #     cca_coefs=cca_analysis_result,
+            #     stimuli=True,
+            #     frequency=0.0,
+            #     time=t_stamp,
+            # )
+
+            predictedClass = np.argmax(sk_result) + 1
             print(predictedClass)
 
             time.sleep(1)

@@ -12,7 +12,7 @@ def initialize_writer(
     file_name: str,
     header: str,
     mode: str = "w",
-) -> tuple[_csv._writer, IO]:
+) -> tuple["_csv._writer", IO]:
     """_summary_
 
     _extended_summary_
@@ -21,7 +21,7 @@ def initialize_writer(
         file_name (str): file name only, without file extention
         mode (str, optional): _description_. Defaults to "a".
     """
-    file_name = file_name + "_" + datetime.strftime(r"%Y%m%d-%H%M") + ".csv"
+    file_name = file_name + "_" + datetime.now().strftime(r"%Y%m%d-%H%M") + ".csv"
     csv_file = open(file_name, mode=mode, newline="")
     writer = csv.writer(csv_file)
     writer.writerow(header)
@@ -32,22 +32,24 @@ def uninitialize_writer(csv_file) -> None:
     csv_file.close()
 
 
-def record_eeg_data(writer: _csv._writer, data: np.ndarray) -> None:
-    data = data.T if data.shape[0] < data.shape[1] else data
+def record_eeg_data(writer: "_csv._writer", data: np.ndarray) -> None:
+    # data = data.T if data.shape[0] < data.shape[1] else data
     record_data(writer=writer, data=data)
 
 
 def record_cca_data(
-    writer: _csv._writer,
+    writer: "_csv._writer",
     cca_coefs: np.ndarray,
-    stimuly: bool,
+    stimuli: bool,
+    frequency: float,
     time,
 ) -> None:
-    data = np.append(cca_coefs, [stimuly, time])
-    record_data(writer=writer, data=data)
+    data = np.append(cca_coefs, [stimuli, frequency, time])
+    # record_data(writer=writer, data=data)
+    writer.writerow(data)
 
 
-def record_data(writer: _csv._writer, data: np.ndarray) -> None:
+def record_data(writer: "_csv._writer", data: np.ndarray) -> None:
     writer.writerows(data)
 
 
