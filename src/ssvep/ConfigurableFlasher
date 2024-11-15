@@ -1,3 +1,17 @@
+"""
+Summary:
+
+Steady-State Visual Evoked Potential (SSVEP) Flicker Stimulus Generator. 
+It uses Pygame to create full-screen flickering stimuli as data analysis for inputs in chess. 
+The flicker frequencies and durations are configurable, enabling mutiple different visual 
+stimuli affect the user's brain activity to map different user inputs.
+
+Author(s): Jessu Doroy
+Commenter(s): Ivan Costa Neto
+Last Updated: Nov. 15, 2024
+"""
+
+
 import pygame
 import time
 import sys
