@@ -116,9 +116,79 @@ class FoCAA_KNN:
             result[freqIdx] = np.max(corr)  # maximum correlation for the frequency
 
         # print(result)
+        return result
 
-        return result  # return correlations for all frequencies
+    def cca_analysis_beta(self, Xa: np.ndarray, Xb: np.ndarray):
+        """
+        Fits CCA parameters using the standard eigenvalue problem.
 
+        :param Xa: Observations with shape (n_samps, p_dim).
+        :param Xb: Observations with shape (n_samps, q_dim).
+        :return:   Linear transformations Wa and Wb.
+        """
+        inv = np.linalg.inv
+        mm = np.matmul
+
+        N, p = Xa.shape
+        N, q = Xb.shape
+        r = min(p, q)
+
+        Xa -= Xa.mean(axis=0)
+        Xa /= Xa.std(axis=0)
+        Xb -= Xb.mean(axis=0)
+        Xb /= Xb.std(axis=0)
+
+        p = Xa.shape[1]
+        C = np.cov(Xa.T, Xb.T)
+        Caa = C[:p, :p]
+        Cbb = C[p:, p:]
+        Cab = C[:p, p:]
+        Cba = C[p:, :p]
+
+        # Either branch results in: r x r matrix where r = min(p, q).
+        if q < p:
+            M = mm(mm(inv(Cbb), Cba), mm(inv(Caa), Cab))
+        else:
+            M = mm(mm(inv(Caa), Cab), mm(inv(Cbb), Cba))
+
+        # Solving the characteristic equation,
+        #
+        #     det(M - rho^2 I) = 0
+        #
+        # is equivalent to solving for rho^2, which are the eigenvalues of the
+        # matrix.
+        eigvals, eigvecs = np.linalg.eig(M)
+        rhos = np.sqrt(eigvals)
+
+        # Ensure we go through eigenvectors in descending order.
+        inds = (-rhos).argsort()
+        rhos = rhos[inds]
+        eigvals = eigvals[inds]
+        # NumPy returns each eigenvector as a column in a matrix.
+        eigvecs = eigvecs.T[inds].T
+        Wb = eigvecs
+
+        Wa = np.zeros((p, r))
+        for i, (rho, wb_i) in enumerate(zip(rhos, Wb.T)):
+            wa_i = mm(mm(inv(Caa), Cab), wb_i) / rho
+            Wa[:, i] = wa_i
+
+        # Sanity check: canonical correlations are equal to the rhos.
+        Za = np.linalg.norm(mm(Xa, Wa), 2, axis=0)
+        Zb = np.linalg.norm(mm(Xb, Wb), 2, axis=0)
+        print("=" * 100)
+        print("Canonical correlations (Za): ", Za)
+        print("Canonical correlations (Zb): ", Zb)
+        print("=" * 100)
+        CCs = np.zeros(r)
+
+        for i in range(r):
+            za = Za[:, i]
+            zb = Zb[:, i]
+            CCs[i] = np.dot(za, zb)
+        assert np.allclose(CCs, rhos)
+
+        return Wa, Wb
 
     # performs CCA-based analysis for SSVEP classification
     def cca_analysis(self, data: np.ndarray):
@@ -144,24 +214,40 @@ class FoCAA_KNN:
 
             # calculate covariance matrices
             covariance = np.cov(xy, rowvar=False)
+            
             n = min(data.shape[1], data_ref.shape[1])  # minimum dimension (channels vs. references)
             cx = covariance[:n, :n]  # covariance of EEG data
             cy = covariance[n:, n:]  # covariance of reference signals
             cxy = covariance[:n, n:]  # cross-covariance
             cyx = covariance[n:, :n]  # transposed cross-covariance
 
-           # solve for canonical correlations using eigenvalue decomposition
-            eps = np.finfo(float).eps  # small value to prevent singular matrices
+            # Solve the optimization problem using eigenvalue decomposition
+            eps = np.finfo(np.float32).eps # small value to prevent singular matrices
             try:
-                corr_coef = (
-                    np.linalg.inv(cy + eps * np.eye(cy.shape[0]))
-                    @ cyx
-                    @ np.linalg.inv(cx + eps * np.eye(cx.shape[0]))
-                    @ cxy
-                )
+                if np.linalg.det(cx) != 0 and np.linalg.det(cy) != 0:
+                    cx_inv = np.linalg.inv(cx)
+                    cy_inv = np.linalg.inv(cy)
+                else:
+                    # print("Taking changed version of cx and cy...")
+                    coef = 10 ** (-5)
+                    cx_inv = np.linalg.inv(cx + coef * eps * np.eye(cx.shape[0]))
+                    cy_inv = np.linalg.inv(cy + coef * eps * np.eye(cy.shape[0]))
+                corr_coef = cy_inv @ cyx @ cx_inv @ cxy
             except Exception as e:
-                print(f"Exception was triggered. Values: cx={cx}")
-                print("full thing: ", cx + eps * np.eye(cx.shape[0]))
+                print("*" * 100)
+                print(f"Exception was triggered. Values:\n cx = {cx}")
+                print("full thing: \n", cx + eps * np.eye(cx.shape[0]))
+                print("Dtype cx: ", cx.dtype)
+                print("Dtype cy: ", cy.dtype)
+                print(
+                    "Determinant of original cx: ",
+                    np.linalg.det(cx),
+                )
+                print(
+                    "Determinant of updated cx: ",
+                    np.linalg.det(cx + coef * eps * np.eye(cx.shape[0])),
+                )
+                print("*" * 100)
                 raise e
 
             # eigenvalue decomposition and sorting

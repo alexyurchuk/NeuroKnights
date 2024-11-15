@@ -35,7 +35,7 @@ class DataProcessor:
         Returns:
             data (np.ndarray): preprocessed EEG data (shape: [samples, channels])
         """
-        for i in range(0, len(data)):  # loop through each EEG channel
+        for i in range(0, data.shape[0]):  # loop through each EEG channel
             # detrend to remove linear drifts (DC offset)
             DataFilter.detrend(data[i], DetrendOperations.CONSTANT.value)
 

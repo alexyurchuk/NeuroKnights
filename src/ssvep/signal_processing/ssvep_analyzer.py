@@ -77,7 +77,8 @@ class SSVEPAnalyzer:
 
         # initialize writers for EEG data and CCA results
         eeg_writer, eeg_csv_file = recording.initialize_writer(
-            file_name="./data/processed_eeg_data", header=self.channel_names
+            file_name="./data/processed_eeg_data",
+            header=self.channel_names + ["Timestamp"],
         )
         sk_cca_writer, sk_cca_csv = recording.initialize_writer(
             file_name="./data/sk_cca_data",
@@ -94,8 +95,12 @@ class SSVEPAnalyzer:
 
         # main loop for data acquisition and analysis
         while self._run:
+
             # fetch EEG data for analysis (specific channels)
-            data = self.board_shim.get_current_board_data(self.cca_buffer_size)[1:4]
+            data = self.board_shim.get_current_board_data(self.cca_buffer_size)
+            samp_timestamps = data[11].T
+            samp_timestamps.shape = (samp_timestamps.shape[0], 1)
+            data = data[1:5]  # dont forget to change this
 
             t_stamp = time.time()  # record the current timestamp
 
@@ -103,7 +108,10 @@ class SSVEPAnalyzer:
             data = data_processor.process_data(data)
 
             # record preprocessed EEG data
-            recording.record_eeg_data(writer=eeg_writer, data=data)
+            # eeg_writer.writerows(data)
+            recording.record_eeg_data(
+                writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
+            )
 
             # perform SSVEP classification using sklearn-based CCA
             sk_result = focca_knn.sk_findCorr(self.n_components, data)
@@ -117,12 +125,21 @@ class SSVEPAnalyzer:
                 time=t_stamp,
             )
 
-            # perform custom CCA analysis (manual implementation)
-            cca_analysis_result = focca_knn.cca_analysis(data=data)
-
             print("=" * 100)
             print("Sklearn CCA Result:", sk_result)
-            print("Custom CCA Result:", cca_analysis_result)
+
+            # custom_result = []
+
+            # for freq_id in range(0, (focca_knn.reference_signals.shape)[0]):
+            #     Xb = np.squeeze(focca_knn.reference_signals[freq_id, :, :]).T
+            #     Wa, Wb = focca_knn.cca_analysis(Xa=data, Xb=Xb)
+            #     custom_result.append(np.array([Wa, Wb]))
+            # custom_result = np.array(custom_result)
+            
+            # perform custom CCA analysis (manual implementation)
+            custom_result = focca_knn.cca_analysis(data=data)
+
+            print("Custom CCA Result:", custom_result)
             print("=" * 100)
 
             # determine the predicted frequency class
@@ -162,7 +179,8 @@ class SSVEPAnalyzer:
 
 if __name__ == "__main__":
     # define target SSVEP frequencies
-    frequencies = [8, 10, 12, 15]
+    frequencies = [7, 9, 10, 11, 13, 15, 17, 19]
+    # frequencies = [8, 10, 12, 15]
 
     # enable BrainFlow debug logging
     BoardShim.enable_dev_board_logger()
@@ -175,8 +193,14 @@ if __name__ == "__main__":
     board = BoardShim(BoardIds.NEUROPAWN_KNIGHT_BOARD, params)
 
     # define EEG channels and their names
-    channels = [1, 2, 3]  # modify based on your board configuration
-    channel_names = ["O1", "Oz", "O2"]
+    # modify based on your board configuration
+    channels = [
+        1,
+        2,
+        3,
+        4,
+    ]  # Todo: Right now this script assumes there are only 3 channels and they are connected to the board in consecutive order
+    channel_names = ["O1", "Oz", "O2", "POZ"]
 
     # create an instance of SSVEPAnalyzer
     ssvep_analyzer = SSVEPAnalyzer(board, frequencies, channels, channel_names)

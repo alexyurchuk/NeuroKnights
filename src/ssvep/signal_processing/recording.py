@@ -57,14 +57,18 @@ def uninitialize_writer(csv_file) -> None:
     csv_file.close()
 
 
-# records EEG data to a CSV file
-def record_eeg_data(writer: "_csv._writer", data: np.ndarray) -> None:
+
+def record_eeg_data(
+    writer: "_csv._writer", data: np.ndarray, samp_timestamps: np.ndarray
+) -> None:
     """
     Args:
         writer (_csv._writer): CSV writer object to write data.
-        data (np.ndarray): EEG data array (channels x samples).
+        data (np.ndarray): EEG data array (samples x channels).
+        samp_timestamps (np.ndarray): EEG data sample timestamps array (samples x 1).
     """
-    # ensures data is correctly oriented for writing
+    # data = data.T if data.shape[0] < data.shape[1] else data
+    data = np.concatenate((data, samp_timestamps), axis=1)
     record_data(writer=writer, data=data)
 
 
