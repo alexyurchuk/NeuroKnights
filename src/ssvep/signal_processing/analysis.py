@@ -168,9 +168,9 @@ class FoCAA_KNN:
             eig_vals = np.linalg.eigvals(corr_coef)
 
             # compute eigenvalues and canonical correlations
-            eig_vals = np.linalg.eigvals(corr_coef)  # Solve for eigenvalues
-            eig_vals[eig_vals < 0] = 0  # Set small negative values to zero
-            d_coeff = np.sqrt(np.sort(np.real(eig_vals))[::-1])  # Square root of eigenvalues
+            eig_vals = np.linalg.eigvals(corr_coef)  # solve for eigenvalues
+            eig_vals[eig_vals < 0] = 0  # set small negative values to zero
+            d_coeff = np.sqrt(np.sort(np.real(eig_vals))[::-1])  # square root of eigenvalues
 
             result.append(d_coeff[:n])  # append top canonical correlations for this frequency
 
