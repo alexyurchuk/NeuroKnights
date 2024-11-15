@@ -1,0 +1,75 @@
+# src / ssvep / ConfigurableFlasher.py
+
+"""
+Summary:
+
+Steady-State Visual Evoked Potential (SSVEP) Flicker Stimulus Generator. 
+It uses Pygame to create full-screen flickering stimuli as data analysis for inputs in chess. 
+The flicker frequencies and durations are configurable, enabling mutiple different visual 
+stimuli affect the user's brain activity to map different user inputs.
+
+Author(s): Jessu Doroy
+Commenter(s): Ivan Costa Neto
+Last Updated: Nov. 15, 2024
+"""
+
+
+import pygame
+import time
+import sys
+
+# Configuration
+"""
+To configure, just create new set in list STAGES. Freq in Hz, Duration in seconds
+"""
+
+STAGES = [
+    {"frequency": 0, "duration": 5},  #Wait for a bit
+    {"frequency": 10, "duration": 5},  # 10 Hz flashing for 5 seconds
+    {"frequency": 0, "duration": 5},  # Pause for 5 seconds
+    {"frequency": 20, "duration": 5},  # 20 Hz flashing for 5 seconds
+
+]
+WHITE = (255, 255, 255)
+BLACK = (0, 0, 0)
+
+# Initialize Pygame
+pygame.init()
+screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)  # Set to full screen
+pygame.display.set_caption("SSVEP Flicker Stimulus")
+
+# Main loop to go through each stage
+for stage in STAGES:
+    frequency = stage["frequency"]
+    duration = stage["duration"]
+    interval = 1 / (frequency * 2) if frequency > 0 else duration  # Set interval for flashing or full pause
+
+    # Start timing for the current stage
+    start_time = time.time()
+    is_white = False  # Initial color state
+
+    # Run stage based on duration
+    while time.time() - start_time < duration:
+        if frequency > 0:
+            # Toggle the color for flashing
+            screen.fill(WHITE if is_white else BLACK)
+            is_white = not is_white
+            pygame.display.flip()
+            time.sleep(interval)
+        else:
+            # Pause with a black screen if frequency is 0
+            screen.fill(BLACK)
+            pygame.display.flip()
+            time.sleep(interval)
+
+        # Check for exit conditions
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN and event.key == pygame.K_ESCAPE:
+                pygame.quit()
+                sys.exit()
+
+# Clean up
+pygame.quit()
