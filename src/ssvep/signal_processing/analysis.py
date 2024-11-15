@@ -14,15 +14,22 @@ Last Updated: Nov. 15, 2024
 
 import numpy as np
 
-# Canonical Correlation Analysis (CCA) implementation from the scikit-learn library 
+# Canonical Correlation Analysis (CCA) implementation from the scikit-learn library
 # finds linear relationships b/w two datasets by projecting them into a shared space where the correlation is maximized
 from sklearn.cross_decomposition import CCA
+
 
 # class: Frequency-Optimized Canonical Correlation Analysis with K-Nearest Neighbors
 class FoCAA_KNN:
 
     # initializes the FoCAA-KNN model for SSVEP classification
-    def __init__(self, n_components: int, frequencies: list, sampling_rate: int, cca_buffer_size: int,) -> None:
+    def __init__(
+        self,
+        n_components: int,
+        frequencies: list,
+        sampling_rate: int,
+        cca_buffer_size: int,
+    ) -> None:
         """
         Args:
             n_components (int): Number of canonical components to compute for CCA.
@@ -34,19 +41,18 @@ class FoCAA_KNN:
         self.sampling_rate = sampling_rate
         self.cca_buffer_size = cca_buffer_size
 
-         # generate reference signals for each frequency
+        # generate reference signals for each frequency
         self.reference_signals = []  # list to store reference signals
 
         # iterates through every frequency
         for frequency in frequencies:
-             # generate sine/cosine signals for the given frequency
+            # generate sine/cosine signals for the given frequency
             self.reference_signals.append(
                 self.get_reference_signals(cca_buffer_size, frequency)
             )
 
         self.reference_signals = np.array(self.reference_signals)  # converts to ndarray
         # print("init: ", self.reference_signals.shape)
-
 
     # gets reference signals (sine/cosine waves) for the given target frequency
     def get_reference_signals(self, length, target_freq) -> np.ndarray:
@@ -80,7 +86,6 @@ class FoCAA_KNN:
         # return a numpy array of shape (4, length)
         return reference_signals
 
-
     # computes canonical correlations using CCA for each reference signal
     def sk_findCorr(self, n_components: int, data: np.ndarray) -> np.ndarray:
         """
@@ -95,7 +100,9 @@ class FoCAA_KNN:
 
         cca = CCA(n_components)  # initialize cca
         corr = np.zeros(n_components)  # stores correlations for each component
-        result = np.zeros((self.reference_signals.shape)[0])  # correlations for each frequency
+        result = np.zeros(
+            (self.reference_signals.shape)[0]
+        )  # correlations for each frequency
 
         # iterates through each reference signal (one per frequency)
         for freqIdx in range(0, (self.reference_signals.shape)[0]):
@@ -105,9 +112,13 @@ class FoCAA_KNN:
             # )
             # print(np.squeeze(freq[freqIdx, :, :]).T)
 
-            ref_signal = np.squeeze(self.reference_signals[freqIdx, :, :]).T  # extract reference signals
+            ref_signal = np.squeeze(
+                self.reference_signals[freqIdx, :, :]
+            ).T  # extract reference signals
             cca.fit(data, ref_signal)  # fit EEG data and reference signals
-            O1_a, O1_b = cca.transform(data, ref_signal)  # transforms datasets into canonical space
+            O1_a, O1_b = cca.transform(
+                data, ref_signal
+            )  # transforms datasets into canonical space
 
             # compute correlations for each canonical component
             for indVal in range(n_components):
@@ -200,11 +211,15 @@ class FoCAA_KNN:
             np.ndarray: Canonical correlation coefficients for each frequency.
         """
         # combine the data and reference data based on their dimensionality
-        result = []  # will store the canonical correlation coefficients for all frequencies
+        result = (
+            []
+        )  # will store the canonical correlation coefficients for all frequencies
 
         for freqIdx in range(self.reference_signals.shape[0]):
-            data_ref = np.squeeze(self.reference_signals[freqIdx, :, :]).T  # extract reference signals
-            
+            data_ref = np.squeeze(
+                self.reference_signals[freqIdx, :, :]
+            ).T  # extract reference signals
+
             # combine EEG data and reference signals for covariance computation
             xy = (
                 np.concatenate((data, data_ref), axis=1)
@@ -214,21 +229,23 @@ class FoCAA_KNN:
 
             # calculate covariance matrices
             covariance = np.cov(xy, rowvar=False)
-            
-            n = min(data.shape[1], data_ref.shape[1])  # minimum dimension (channels vs. references)
+
+            n = min(
+                data.shape[1], data_ref.shape[1]
+            )  # minimum dimension (channels vs. references)
             cx = covariance[:n, :n]  # covariance of EEG data
             cy = covariance[n:, n:]  # covariance of reference signals
             cxy = covariance[:n, n:]  # cross-covariance
             cyx = covariance[n:, :n]  # transposed cross-covariance
 
             # Solve the optimization problem using eigenvalue decomposition
-            eps = np.finfo(np.float32).eps # small value to prevent singular matrices
+            eps = np.finfo(np.float32).eps  # small value to prevent singular matrices
             try:
                 if np.linalg.det(cx) != 0 and np.linalg.det(cy) != 0:
                     cx_inv = np.linalg.inv(cx)
                     cy_inv = np.linalg.inv(cy)
                 else:
-                    # print("Taking changed version of cx and cy...")
+                    print("Taking changed version of cx and cy...")
                     coef = 10 ** (-5)
                     cx_inv = np.linalg.inv(cx + coef * eps * np.eye(cx.shape[0]))
                     cy_inv = np.linalg.inv(cy + coef * eps * np.eye(cy.shape[0]))
@@ -256,12 +273,16 @@ class FoCAA_KNN:
             # compute eigenvalues and canonical correlations
             eig_vals = np.linalg.eigvals(corr_coef)  # solve for eigenvalues
             eig_vals[eig_vals < 0] = 0  # set small negative values to zero
-            d_coeff = np.sqrt(np.sort(np.real(eig_vals))[::-1])  # square root of eigenvalues
+            d_coeff = np.sqrt(
+                np.sort(np.real(eig_vals))[::-1]
+            )  # square root of eigenvalues
 
-            result.append(d_coeff[:n])  # append top canonical correlations for this frequency
+            result.append(
+                d_coeff[:n]
+            )  # append top canonical correlations for this frequency
 
         result = np.array(result)
 
         return result  # return results for all frequencies
-    
+
         # return d_coeff[:n]  # Return the canonical correlations

@@ -19,7 +19,7 @@ from typing import IO  # for type hinting file objects
 import numpy as np
 from datetime import datetime
 
-# import pandas as pd 
+# import pandas as pd
 
 
 # initializes a CSV writer for recording data
@@ -55,7 +55,6 @@ def uninitialize_writer(csv_file) -> None:
         csv_file (IO): the file object to close
     """
     csv_file.close()
-
 
 
 def record_eeg_data(

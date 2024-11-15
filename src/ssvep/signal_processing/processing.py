@@ -25,7 +25,6 @@ class DataProcessor:
         """
         self.sampling_rate = sampling_rate
 
-
     # preprocesses EEG data by detrending, filtering, and applying CAR
     def process_data(self, data: np.ndarray) -> np.ndarray:
         """
@@ -78,7 +77,6 @@ class DataProcessor:
 
         return data
 
-
     # computes the Common Average Reference (CAR) for EEG signals
     def car(self, data: np.ndarray, reference_channel: int = None) -> np.ndarray:
         """
@@ -93,7 +91,9 @@ class DataProcessor:
 
         if reference_channel is not None:
             # subtract the reference signal from all other channels
-            channels = np.delete(np.arange(data_car.shape[1]), reference_channel)  # all channels except the reference
+            channels = np.delete(
+                np.arange(data_car.shape[1]), reference_channel
+            )  # all channels except the reference
 
             if data_car.ndim > 2:  # handles multi-dimensional data (e.g., trial-based)
                 data_car[:, channels, :] -= np.reshape(
@@ -105,7 +105,9 @@ class DataProcessor:
 
         else:
             # compute the average signal across all channels
-            average_potential = np.mean(data_car, axis=1, keepdims=True)  # shape: [samples, 1]
+            average_potential = np.mean(
+                data_car, axis=1, keepdims=True
+            )  # shape: [samples, 1]
 
             # ensure it's a numpy array for consistency
             average_potential = (

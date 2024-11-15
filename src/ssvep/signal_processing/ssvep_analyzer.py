@@ -22,6 +22,7 @@ from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
 from analysis import FoCAA_KNN  # CCA-based SSVEP classification
 
+
 class SSVEPAnalyzer:
 
     # initializes the SSVEP Analyzer
@@ -48,8 +49,12 @@ class SSVEPAnalyzer:
             n_components (int, optional): # of CCA components to compute (default: 1)
         """
         self.board_shim = board_shim
-        self.frequencies = list(map(float, frequencies))  # convert frequencies to floats
-        self.sampling_rate = BoardShim.get_sampling_rate(board_id=board_shim.get_board_id())
+        self.frequencies = list(
+            map(float, frequencies)
+        )  # convert frequencies to floats
+        self.sampling_rate = BoardShim.get_sampling_rate(
+            board_id=board_shim.get_board_id()
+        )
         self.n_components = n_components
         self.channels = channels  # indices of EEG channels used for analysis
         self.channel_names = channel_names  # names of the channels
@@ -66,10 +71,11 @@ class SSVEPAnalyzer:
         self.board_shim.start_stream(self.buffer_size)  # starts data streaming
         time.sleep(1)
         for channel in self.channels:
-            self.board_shim.config_board(f"chon_{channel}_{self.gain_value}")  # enable channel
+            self.board_shim.config_board(
+                f"chon_{channel}_{self.gain_value}"
+            )  # enable channel
             print(f"Enabled channel {channel} with gain {self.gain_value}.")
             time.sleep(1)
-
 
     # main function to start data acquisition, processing, and SSVEP classification.
     def run(self) -> None:
@@ -86,7 +92,12 @@ class SSVEPAnalyzer:
         )
 
         # initialize FoCAA-KNN and DataProcessor
-        focca_knn = FoCAA_KNN(self.n_components, self.frequencies, self.sampling_rate, self.cca_buffer_size)
+        focca_knn = FoCAA_KNN(
+            self.n_components,
+            self.frequencies,
+            self.sampling_rate,
+            self.cca_buffer_size,
+        )
         data_processor = DataProcessor(self.sampling_rate)
 
         # ensure sufficient data is available for processing
@@ -135,7 +146,7 @@ class SSVEPAnalyzer:
             #     Wa, Wb = focca_knn.cca_analysis(Xa=data, Xb=Xb)
             #     custom_result.append(np.array([Wa, Wb]))
             # custom_result = np.array(custom_result)
-            
+
             # perform custom CCA analysis (manual implementation)
             custom_result = focca_knn.cca_analysis(data=data)
 
@@ -154,7 +165,6 @@ class SSVEPAnalyzer:
 
         self.uninitialize()
 
-
     # stops the analyzer gracefully when a signal is received.
     def stop(self, sig, frame) -> None:
         """
@@ -164,7 +174,6 @@ class SSVEPAnalyzer:
         """
         print("Stopping SSVEP Analyzer....")
         self._run = False  # terminate the main loop
-
 
     # disables the channels and stops the board session
     def uninitialize(self) -> None:
