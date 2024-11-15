@@ -13,6 +13,7 @@ Implementing the canonical correlation analysis (CCA) algorithm to classify SSVE
 7. [This kind person](https://github.com/RezaSaadatyar) not only nicely organized everything but also wrote a very impressive code with impressive formatting: [link to the repo](https://github.com/RezaSaadatyar/SSVEP-based-EEG-signal-processing).
 8. https://neuraldatascience.io/7-eeg/erp_artifacts.html#muscle-contractions
 9. https://gregorygundersen.com/blog/2018/07/17/cca/
+10. https://youtu.be/XQzKG511fNc?si=lfT0tpNW4QEFRY4k
 
 
 
