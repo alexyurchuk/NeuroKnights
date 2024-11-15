@@ -32,8 +32,11 @@ def uninitialize_writer(csv_file) -> None:
     csv_file.close()
 
 
-def record_eeg_data(writer: "_csv._writer", data: np.ndarray) -> None:
+def record_eeg_data(
+    writer: "_csv._writer", data: np.ndarray, samp_timestamps: np.ndarray
+) -> None:
     # data = data.T if data.shape[0] < data.shape[1] else data
+    data = np.concatenate((data, samp_timestamps), axis=1)
     record_data(writer=writer, data=data)
 
 

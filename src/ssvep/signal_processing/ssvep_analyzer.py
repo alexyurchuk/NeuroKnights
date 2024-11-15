@@ -70,7 +70,8 @@ class SSVEPAnalyzer:
         self.initialize()
 
         eeg_writer, eeg_csv_file = recording.initialize_writer(
-            file_name="./data/processed_eeg_data", header=self.channel_names
+            file_name="./data/processed_eeg_data",
+            header=self.channel_names + ["Timestamp"],
         )
 
         # sk_cca_csv_header = s
@@ -97,9 +98,10 @@ class SSVEPAnalyzer:
             time.sleep(0.5)
 
         while self._run:
-            data = self.board_shim.get_current_board_data(self.cca_buffer_size)[
-                1:4  # dont forget to change this
-            ]
+            data = self.board_shim.get_current_board_data(self.cca_buffer_size)
+            samp_timestamps = data[11].T
+            samp_timestamps.shape = (samp_timestamps.shape[0], 1)
+            data = data[1:5]  # dont forget to change this
 
             t_stamp = time.time()
 
@@ -108,7 +110,9 @@ class SSVEPAnalyzer:
             )  # returns transpose of processed data
 
             # eeg_writer.writerows(data)
-            recording.record_eeg_data(writer=eeg_writer, data=data)
+            recording.record_eeg_data(
+                writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
+            )
 
             sk_result = focca_knn.sk_findCorr(self.n_components, data)
 
@@ -121,11 +125,20 @@ class SSVEPAnalyzer:
                 time=t_stamp,
             )
 
-            cca_analysis_result = focca_knn.cca_analysis(data=data)
-
             print("=" * 100)
             print("Sk:", sk_result)
-            print("Custom: ", cca_analysis_result)
+
+            # custom_result = []
+
+            # for freq_id in range(0, (focca_knn.reference_signals.shape)[0]):
+            #     Xb = np.squeeze(focca_knn.reference_signals[freq_id, :, :]).T
+            #     Wa, Wb = focca_knn.cca_analysis(Xa=data, Xb=Xb)
+            #     custom_result.append(np.array([Wa, Wb]))
+            # custom_result = np.array(custom_result)
+
+            custom_result = focca_knn.cca_analysis(data=data)
+
+            print("Custom: ", custom_result)
             print("=" * 100)
 
             # recording.record_cca_data(
@@ -162,7 +175,7 @@ class SSVEPAnalyzer:
 
 
 if __name__ == "__main__":
-    frequencies = [8, 10, 12, 15]
+    frequencies = [7, 9, 10, 11, 13, 15, 17, 19]
 
     BoardShim.enable_dev_board_logger()
 
@@ -176,8 +189,9 @@ if __name__ == "__main__":
         1,
         2,
         3,
+        4,
     ]  # Todo: Right now this script assumes there are only 3 channels and they are connected to the board in consecutive order
-    channel_names = ["O1", "Oz", "O2"]
+    channel_names = ["O1", "Oz", "O2", "POZ"]
 
     ssvep_analyzer = SSVEPAnalyzer(board, frequencies, channels, channel_names)
 
