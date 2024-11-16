@@ -92,6 +92,15 @@ public class PlayerInput : MonoBehaviour
         // Move Selection
         else
         {
+            if (moves == null || moves.Count == 0)
+            {
+                Debug.LogError("No moves to navigate!");
+                selected = false;
+                DeselectCoord();
+                HighlightCurrentCell();
+                return;
+            }
+
             if (Input.GetKeyDown(KeyCode.W))
             {
                 currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
