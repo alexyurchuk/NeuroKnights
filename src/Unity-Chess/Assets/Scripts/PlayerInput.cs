@@ -80,6 +80,10 @@ public class PlayerInput : MonoBehaviour
             moved = MoveToNextPiece(0, 1);
             boardUI.ResetAllSquareColors();
         }
+        else if (Input.GetKeyDown(KeyCode.E)) // Select
+        {
+            SelectCoord(currentCoord);
+        }    
 
         if (moved)
         {
@@ -94,48 +98,64 @@ public class PlayerInput : MonoBehaviour
 
         Debug.Log($"Starting search from (rank: {rank}, file: {file})");
 
-        // Determine the search direction
-        bool searchingColumns = fileDelta != 0; // True if moving horizontally (A/D), false for vertical (W/S)
-
-        while (true)
+        if (fileDelta != 0) // Moving vertically (W or S)
         {
-            // Update position
-            file += fileDelta;
-            rank += rankDelta;
-
-            // If out of bounds, shift to the next column or row
-            if (file < 0 || file > 7 || rank < 0 || rank > 7)
+            while (true)
             {
-                Debug.Log($"Out of bounds at (rank: {rank}, file: {file}). Shifting to next row/column.");
+                Debug.Log("vertical");
+                file += fileDelta; // Move up or down (file is vertical)
 
- 
-                    // Move to the next column, reset rank to 0 or 7
-                    file += fileDelta > 0 ? 1 : -1;
-                    rank = fileDelta > 0 ? 0 : 7;
-        
-
-                // Stop if out of bounds entirely
-                if (file < 0 || file > 7 || rank < 0 || rank > 7)
+                // Wrap around or stop if out of bounds
+                if (file < 0 || file > 7)
                 {
-                    Debug.Log("Entire board searched. No valid piece found.");
+                    Debug.Log("No valid pieces found in any column.");
                     return false;
                 }
 
-                Debug.Log($"Shifted to (rank: {rank}, file: {file})");
-            }
+                // Check if the current square contains a valid piece
+                int piece = board.GetPieceFromCoord(new Coord(rank, file));
+                if (piece != Piece.Empty && Piece.PieceColor(piece) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
+                {
+                    Debug.Log($"Piece found at (rank: {rank}, file: {file})");
+                    currentCoord = new Coord(rank, file);
+                    return true;
+                }
 
-            Debug.Log($"Checking (rank: {rank}, file: {file})");
-
-            // Check for a piece of the current player's color
-            int piece = board.GetPieceFromCoord(new Coord(rank, file));
-            if (piece != Piece.Empty && Piece.PieceColor(piece) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
-            {
-                Debug.Log($"Piece found at (rank: {rank}, file: {file})");
-                currentCoord = new Coord(rank, file);
-                return true;
+                Debug.Log($"No valid pieces in column {file}. Moving to the next column.");
             }
         }
+        else if (rankDelta != 0) // Moving horizontally (A or D)
+        {
+            while (true)
+            {
+                Debug.Log("horizontal");
+                rank += rankDelta; // Move left or right (rank is horizontal)
+
+                // Stop if out of bounds
+                if (rank < 0 || rank > 7)
+                {
+                    Debug.Log("Reached the left or right of the board.");
+                    return false;
+                }
+
+                // Check the column for the topmost piece
+                for (file = 7; file >= 0; file--)
+                {
+                    int piece = board.GetPieceFromCoord(new Coord(rank, file));
+                    if (piece != Piece.Empty && Piece.PieceColor(piece) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
+                    {
+                        Debug.Log($"Piece found at (rank: {rank}, file: {file})");
+                        currentCoord = new Coord(rank, file);
+                        return true;
+                    }
+                }
+            }
+        }
+
+        return false; // Fallback case (shouldn't happen)
     }
+
+
 
 
 
