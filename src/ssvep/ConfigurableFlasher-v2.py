@@ -25,14 +25,8 @@ screen_width, screen_height = screen.get_size()  # get screen dimensions
 pygame.display.set_caption("SSVEP Chess WASD Movement Flashing Boxes")
 
 # colors
-black = (0, 0, 0)
 white = (255, 255, 255)
-colors = {
-    "W": (255, 0, 0),    # red
-    "A": (0, 255, 0),    # green
-    "S": (0, 0, 255),    # blue
-    "D": (255, 255, 0)   # yellow
-}
+black = (0, 0, 0)
 
 # fonts
 font = pygame.font.SysFont("arial", 48, bold=True)
@@ -53,10 +47,10 @@ positions = {
 
 # frequencies for each box (in Hz)
 frequencies = {
-    "W": 6,  # up: 6 Hz
+    "W": 4,  # up: 4 Hz
     "A": 8,  # left: 8 Hz
-    "S": 10,  # down: 10 Hz
-    "D": 12  # right: 12 Hz
+    "S": 12,  # down: 12 Hz
+    "D": 16  # right: 16 Hz
 }
 
 # directional labels
@@ -98,9 +92,9 @@ while running:
     for key, pos in positions.items():
         # draw flashing box
         if states[key]:  # box is "on"
-            pygame.draw.rect(screen, colors[key], (*pos, box_width, box_height), 0)
-        else:  # box is "off"
             pygame.draw.rect(screen, white, (*pos, box_width, box_height), 0)
+        else:  # box is "off"
+            pygame.draw.rect(screen, black, (*pos, box_width, box_height), 0)
 
         # draw border for all boxes
         pygame.draw.rect(screen, white, (*pos, box_width, box_height), 5)
@@ -118,4 +112,3 @@ while running:
 
 # quit Pygame
 pygame.quit()
-
