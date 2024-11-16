@@ -201,8 +201,41 @@ class FoCAA_KNN:
 
         return Wa, Wb
 
+    def focca_analysis(self, data: np.ndarray, a: list, b: list):
+        num_harmonic = 2
+
+        k = np.arange(
+            1, min(data.shape[1], num_harmonic * 2) + 1, dtype=float
+        )  # Create the array k
+
+        coeff = np.zeros(self.reference_signals.shape[0])
+        print("+" * 100)
+        for val_a in a:
+            for val_b in b:
+                phi = np.power(k, -val_a) + val_b  # Compute phi
+
+                # for i in range(data.shape[-1]):  # Loop through all Trials
+                for ind in range(
+                    self.reference_signals.shape[0]
+                ):  # Calculate CCA for frequencies stimulation
+                    cano_corr = self.cca_analysis(
+                        data,
+                        data_ref=np.squeeze(self.reference_signals[ind, :, :]).T,
+                    )
+                    coeff[ind] = np.sum(
+                        phi * (cano_corr**2), axis=0
+                    )  # Calculate the coefficient coeff(L)
+
+                print(f"val_a = {val_a}, val_b = {val_b} --> {coeff}")
+
+                # predict_label[i] = np.argmax(
+                #     coeff
+                # )  # Predict label for the current trial
+        print("+" * 100)
+        return coeff
+
     # performs CCA-based analysis for SSVEP classification
-    def cca_analysis(self, data: np.ndarray):
+    def cca_analysis(self, data: np.ndarray, data_ref: np.ndarray):
         """
         Args:
             data (np.ndarray): EEG data (shape: [# of samples, # of channels]).
@@ -211,78 +244,78 @@ class FoCAA_KNN:
             np.ndarray: Canonical correlation coefficients for each frequency.
         """
         # combine the data and reference data based on their dimensionality
-        result = (
-            []
-        )  # will store the canonical correlation coefficients for all frequencies
+        # result = (
+        #     []
+        # )  # will store the canonical correlation coefficients for all frequencies
 
-        for freqIdx in range(self.reference_signals.shape[0]):
-            data_ref = np.squeeze(
-                self.reference_signals[freqIdx, :, :]
-            ).T  # extract reference signals
+        # for freqIdx in range(self.reference_signals.shape[0]):
+        # data_ref = np.squeeze(
+        #     self.reference_signals[freqIdx, :, :]
+        # ).T  # extract reference signals
 
-            # combine EEG data and reference signals for covariance computation
-            xy = (
-                np.concatenate((data, data_ref), axis=1)
-                if data.shape[1] <= data_ref.shape[1]
-                else np.concatenate((data_ref, data), axis=1)
+        # combine EEG data and reference signals for covariance computation
+        xy = (
+            np.concatenate((data, data_ref), axis=1)
+            if data.shape[1] <= data_ref.shape[1]
+            else np.concatenate((data_ref, data), axis=1)
+        )
+
+        # calculate covariance matrices
+        covariance = np.cov(xy, rowvar=False)
+
+        n = min(
+            data.shape[1], data_ref.shape[1]
+        )  # minimum dimension (channels vs. references)
+        cx = covariance[:n, :n]  # covariance of EEG data
+        cy = covariance[n:, n:]  # covariance of reference signals
+        cxy = covariance[:n, n:]  # cross-covariance
+        cyx = covariance[n:, :n]  # transposed cross-covariance
+
+        # Solve the optimization problem using eigenvalue decomposition
+        eps = np.finfo(np.float32).eps  # small value to prevent singular matrices
+        try:
+            if np.linalg.det(cx) != 0 and np.linalg.det(cy) != 0:
+                cx_inv = np.linalg.inv(cx)
+                cy_inv = np.linalg.inv(cy)
+            else:
+                # print("Taking changed version of cx and cy...")
+                coef = 10 ** (-5)
+                cx_inv = np.linalg.inv(cx + coef * eps * np.eye(cx.shape[0]))
+                cy_inv = np.linalg.inv(cy + coef * eps * np.eye(cy.shape[0]))
+            corr_coef = cy_inv @ cyx @ cx_inv @ cxy
+        except Exception as e:
+            print("*" * 100)
+            print(f"Exception was triggered. Values:\n cx = {cx}")
+            print("full thing: \n", cx + eps * np.eye(cx.shape[0]))
+            print("Dtype cx: ", cx.dtype)
+            print("Dtype cy: ", cy.dtype)
+            print(
+                "Determinant of original cx: ",
+                np.linalg.det(cx),
             )
+            print(
+                "Determinant of updated cx: ",
+                np.linalg.det(cx + coef * eps * np.eye(cx.shape[0])),
+            )
+            print("*" * 100)
+            raise e
 
-            # calculate covariance matrices
-            covariance = np.cov(xy, rowvar=False)
+        # eigenvalue decomposition and sorting
+        eig_vals = np.linalg.eigvals(corr_coef)
 
-            n = min(
-                data.shape[1], data_ref.shape[1]
-            )  # minimum dimension (channels vs. references)
-            cx = covariance[:n, :n]  # covariance of EEG data
-            cy = covariance[n:, n:]  # covariance of reference signals
-            cxy = covariance[:n, n:]  # cross-covariance
-            cyx = covariance[n:, :n]  # transposed cross-covariance
+        # compute eigenvalues and canonical correlations
+        eig_vals = np.linalg.eigvals(corr_coef)  # solve for eigenvalues
+        eig_vals[eig_vals < 0] = 0  # set small negative values to zero
+        d_coeff = np.sqrt(
+            np.sort(np.real(eig_vals))[::-1]
+        )  # square root of eigenvalues
 
-            # Solve the optimization problem using eigenvalue decomposition
-            eps = np.finfo(np.float32).eps  # small value to prevent singular matrices
-            try:
-                if np.linalg.det(cx) != 0 and np.linalg.det(cy) != 0:
-                    cx_inv = np.linalg.inv(cx)
-                    cy_inv = np.linalg.inv(cy)
-                else:
-                    print("Taking changed version of cx and cy...")
-                    coef = 10 ** (-5)
-                    cx_inv = np.linalg.inv(cx + coef * eps * np.eye(cx.shape[0]))
-                    cy_inv = np.linalg.inv(cy + coef * eps * np.eye(cy.shape[0]))
-                corr_coef = cy_inv @ cyx @ cx_inv @ cxy
-            except Exception as e:
-                print("*" * 100)
-                print(f"Exception was triggered. Values:\n cx = {cx}")
-                print("full thing: \n", cx + eps * np.eye(cx.shape[0]))
-                print("Dtype cx: ", cx.dtype)
-                print("Dtype cy: ", cy.dtype)
-                print(
-                    "Determinant of original cx: ",
-                    np.linalg.det(cx),
-                )
-                print(
-                    "Determinant of updated cx: ",
-                    np.linalg.det(cx + coef * eps * np.eye(cx.shape[0])),
-                )
-                print("*" * 100)
-                raise e
+        # result.append(
+        #     d_coeff[:n]
+        # )  # append top canonical correlations for this frequency
 
-            # eigenvalue decomposition and sorting
-            eig_vals = np.linalg.eigvals(corr_coef)
+        # result = np.array(result)
 
-            # compute eigenvalues and canonical correlations
-            eig_vals = np.linalg.eigvals(corr_coef)  # solve for eigenvalues
-            eig_vals[eig_vals < 0] = 0  # set small negative values to zero
-            d_coeff = np.sqrt(
-                np.sort(np.real(eig_vals))[::-1]
-            )  # square root of eigenvalues
-
-            result.append(
-                d_coeff[:n]
-            )  # append top canonical correlations for this frequency
-
-        result = np.array(result)
-
-        return result  # return results for all frequencies
+        return d_coeff[:n]  # return results for all frequencies
 
         # return d_coeff[:n]  # Return the canonical correlations

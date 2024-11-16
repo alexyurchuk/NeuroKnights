@@ -111,7 +111,7 @@ class SSVEPAnalyzer:
             data = self.board_shim.get_current_board_data(self.cca_buffer_size)
             samp_timestamps = data[11].T
             samp_timestamps.shape = (samp_timestamps.shape[0], 1)
-            data = data[1:5]  # dont forget to change this
+            data = data[self.channels]  # dont forget to change this
 
             t_stamp = time.time()  # record the current timestamp
 
@@ -148,14 +148,30 @@ class SSVEPAnalyzer:
             # custom_result = np.array(custom_result)
 
             # perform custom CCA analysis (manual implementation)
-            custom_result = focca_knn.cca_analysis(data=data)
+            a = [0.01, 0.1, 0, 3, 5]
+            b = [0.01, 0.1, 0, 1, 10]
+            custom_result = focca_knn.focca_analysis(data=data, a=a, b=b)
 
             print("Custom CCA Result:", custom_result)
             print("=" * 100)
 
             # determine the predicted frequency class
-            predictedClass = np.argmax(sk_result) + 1  # adjust for 1-based indexing
-            print(predictedClass)
+            sklearn_predictedClass = np.argmax(sk_result)  # adjust for 0-based indexing
+            print("Sklearn CCA prediction: ", sklearn_predictedClass + 1)
+            print(
+                "Sklearn CCA prediction freq: ",
+                self.frequencies[sklearn_predictedClass],
+            )
+
+            custom_predictedClass = (
+                np.argmax(custom_result) + 1
+            )  # adjust for 1-based indexing
+
+            print("Custom FoCCA prediction: ", custom_predictedClass + 1)
+            print(
+                "Custom FoCCA prediction freq: ",
+                self.frequencies[custom_predictedClass],
+            )
 
             time.sleep(1)  # pause before the next iteration
 
@@ -188,7 +204,7 @@ class SSVEPAnalyzer:
 
 if __name__ == "__main__":
     # define target SSVEP frequencies
-    frequencies = [7, 9, 10, 11, 13, 15, 17, 19]
+    frequencies = [7, 9, 11, 13, 15, 17]  # 10, 19
     # frequencies = [8, 10, 12, 15]
 
     # enable BrainFlow debug logging
