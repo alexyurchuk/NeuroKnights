@@ -3,7 +3,7 @@
 """
 Summary:
 
-Maps real-time EEG classifications to WASD keypresses for controlling the chess game.
+Maps real-time EEG classifications to WASD and QE keypresses for controlling the chess game.
 
 Author(s): Ivan Costa Neto
 Commenter(s): Ivan Costa Neto
@@ -16,19 +16,21 @@ from pynput.keyboard import Controller  # keyboard mapping
 # mapping and simulation functions
 keyboard = Controller()
 
-# map the classification integer to a corresponding WASD action
+# map the classification integer to a corresponding WASD, QE action
 def map_classification_to_action(classification):
   """
     Args:
         classification (int): classification result (0 for W, 1 for A, etc.)
     Returns:
-        action_map.get() (str): ('W', 'A', 'S', 'D') or None if classification is invalid
+        action_map.get() (str): ('W', 'A', 'S', 'D', 'E', 'Q') or None if classification is invalid
     """
     action_map = {
         0: 'W',  # forward
         1: 'A',  # left
         2: 'S',  # down
-        3: 'D'   # right
+        3: 'D',  # right
+        4: 'Q',  # deselect
+        5: 'E'   # confirm
     }
     return action_map.get(classification, None)
 
@@ -37,7 +39,7 @@ def map_classification_to_action(classification):
 def simulate_keypress(action):
     """
     Args:
-        action (str): the action that simulates ('W', 'A', 'S', 'D')
+        action (str): the action that simulates ('W', 'A', 'S', 'D', 'Q', 'E')
     """
     if action:
         print(f"Simulating keypress: {action}")  # debugging
@@ -69,7 +71,7 @@ if __name__ == "__main__":
         # initialize the EEG board
         board = setup_board()
 
-        # start the EEG-to-WASD control loop
+        # start the EEG-to-WASDQE control loop
         eeg_to_wasd_control(board, sampling_rate, window_size)
     finally:
         # ensure the EEG board stream is stopped and resources are released
