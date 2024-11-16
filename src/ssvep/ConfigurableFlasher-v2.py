@@ -47,10 +47,10 @@ positions = {
 
 # frequencies for each box (in Hz)
 frequencies = {
-    "W": 4,  # up: 4 Hz
-    "A": 8,  # left: 8 Hz
-    "S": 12,  # down: 12 Hz
-    "D": 16  # right: 16 Hz
+    "W": 6.66,  # up: 4 Hz
+    "A": 7.5,  # left: 8 Hz
+    "S": 8.57,  # down: 12 Hz
+    "D": 10  # right: 16 Hz
 }
 
 # directional labels
