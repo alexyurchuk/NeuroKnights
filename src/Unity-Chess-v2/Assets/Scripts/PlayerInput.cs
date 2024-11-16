@@ -14,6 +14,10 @@ public class PlayerInput : MonoBehaviour
     Coord currentCoord;         // Tracks the highlighted cell with WASD
 
     bool mouseDown = false;
+    bool selected = false;
+
+    private int currentMoveIndex; // Tracks the currently highlighted move during move selection
+    private List<Move> moves; // Stores legal moves for the selected piece
 
     private void Start()
     {
@@ -57,38 +61,71 @@ public class PlayerInput : MonoBehaviour
     {
         bool moved = false;
 
-        // Reset highlight on the previously selected cell
-
-        // Capture WASD input
-        if (Input.GetKeyDown(KeyCode.W)) // Move up
+        // Piece Selection
+        if(!selected)
         {
-            moved = MoveToNextPiece(1, 0);
-            boardUI.ResetAllSquareColors();
+            if (Input.GetKeyDown(KeyCode.W)) // Move up
+            {
+                moved = MoveToNextPiece(1, 0);
+            }
+            else if (Input.GetKeyDown(KeyCode.S)) // Move down
+            {
+                moved = MoveToNextPiece(-1, 0);
+            }
+            else if (Input.GetKeyDown(KeyCode.A)) // Move left
+            {
+                moved = MoveToNextPiece(0, -1);
+            }
+            else if (Input.GetKeyDown(KeyCode.D)) // Move right
+            {
+                moved = MoveToNextPiece(0, 1);
+            }
+            else if (Input.GetKeyDown(KeyCode.E)) // Select
+            {
+                selected = true;
+                SelectCoord(currentCoord);
+                moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
+                currentMoveIndex = 0;
+                HighlightMove(moves[currentMoveIndex].to);
+            }
         }
-        else if (Input.GetKeyDown(KeyCode.S)) // Move down
+        // Move Selection
+        else
         {
-            moved = MoveToNextPiece(-1, 0);
-            boardUI.ResetAllSquareColors();
-        }
-        else if (Input.GetKeyDown(KeyCode.A)) // Move left
-        {
-            moved = MoveToNextPiece(0, -1);
-            boardUI.ResetAllSquareColors();
-        }
-        else if (Input.GetKeyDown(KeyCode.D)) // Move right
-        {
-            moved = MoveToNextPiece(0, 1);
-            boardUI.ResetAllSquareColors();
-        }
-        else if (Input.GetKeyDown(KeyCode.E)) // Select
-        {
-            SelectCoord(currentCoord);
+            if (Input.GetKeyDown(KeyCode.W))
+            {
+                currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
+                HighlightMove(moves[currentMoveIndex].to);
+            }
+            else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
+            {
+                currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
+                HighlightMove(moves[currentMoveIndex].to);
+            }
+            else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
+            {
+                TryMoveToCoord(moves[currentMoveIndex].to);
+                selected = false;
+            }
+            else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
+            {
+                selected = false;
+                DeselectCoord();
+                HighlightCurrentCell(); // Go back to piece selection
+            }
         }
 
         if (moved)
         {
             HighlightCurrentCell();
         }
+    }
+
+    private void HighlightMove(Coord coord)
+    {
+        boardUI.ResetAllSquareColors();
+        SelectCoord(selectedCoord);
+        boardUI.SelectSquare(coord); // Highlight the selected move square
     }
 
     private bool MoveToNextPiece(int fileDelta, int rankDelta)
@@ -118,6 +155,7 @@ public class PlayerInput : MonoBehaviour
                 {
                     Debug.Log($"Piece found at (rank: {rank}, file: {file})");
                     currentCoord = new Coord(rank, file);
+                    boardUI.ResetAllSquareColors();
                     return true;
                 }
 
@@ -146,6 +184,7 @@ public class PlayerInput : MonoBehaviour
                     {
                         Debug.Log($"Piece found at (rank: {rank}, file: {file})");
                         currentCoord = new Coord(rank, file);
+                        boardUI.ResetAllSquareColors();
                         return true;
                     }
                 }
@@ -154,10 +193,6 @@ public class PlayerInput : MonoBehaviour
 
         return false; // Fallback case (shouldn't happen)
     }
-
-
-
-
 
     private void HighlightCurrentCell()
     {
