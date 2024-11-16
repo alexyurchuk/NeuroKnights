@@ -22,7 +22,7 @@ def map_classification_to_action(classification):
     Args:
         classification (int): classification result (0 for W, 1 for A, etc.)
     Returns:
-        action_map.get() (str): ('W', 'A', 'S', 'D', 'E', 'Q') or None if classification is invalid
+        action_map.get() (str): ('W', 'A', 'S', 'D', 'Q', 'E') or None if classification is invalid
     """
     action_map = {
         0: 'W',  # forward
