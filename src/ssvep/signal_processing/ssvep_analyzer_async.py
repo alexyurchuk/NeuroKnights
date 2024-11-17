@@ -22,6 +22,7 @@ import asyncio
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
 from analysis import FoCAA_KNN  # CCA-based SSVEP classification
+from communicating import SocketServer
 
 
 class SSVEPAnalyzer:
@@ -34,6 +35,7 @@ class SSVEPAnalyzer:
         channels: list,
         channel_names: list,
         # two_players: bool = False,
+        socket_server: SocketServer,
         second_board_shim: BoardShim = None,
         gain_value: int = 12,
         buffer_size: int = 450000,
@@ -69,6 +71,7 @@ class SSVEPAnalyzer:
         self.cca_buffer_size = cca_buffer_size  # number of samples per CCA analysis
         self._run = True  # flag to control the main loop
         self.controls = controls
+        self.socket_server = socket_server
 
     def switch_turn(self):
         self.turn = 1 if self.turn == 0 else 0
