@@ -6,8 +6,8 @@ Discover a new era of accessible neuroscience with **NeuroKnights Gambit** — a
 
 [Check out on Devpost how our project performed in natHacks2024!](https://devpost.com/software/neuroknights-gambit)
 
-***Please note that the following information is simply for more insight into our project.***
 
+***Please note that the following information is simply for more insight into our project.***
 ### ‎ 
 ## How does it work?
 
