@@ -4,7 +4,7 @@ from functools import partial
 
 from ssvep_analyzer_async import SSVEPAnalyzer
 from communications import SocketServer
-from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
+from brainflow.board_shim import BoardShim
 
 from PyQt5 import QtWidgets
 from qasync import QEventLoop  # Import QEventLoop for integrating PyQt and asyncio
@@ -19,17 +19,18 @@ def stop(ssvep_analyzer: SSVEPAnalyzer, socket_server: SocketServer, sig, frame)
 def main():
     # Communication Setup
     socket_server = SocketServer()
+    socket_server.run()  # Start the server in a separate thread
 
     # Define target SSVEP frequencies
     frequencies = [6.66, 7.5, 8.57, 10, 12, 15]
-    controls = ["W", "A", "S", "D", "Q", "E"]
+    controls = ["W", "A", "S", "D", "E"]
 
     # Enable BrainFlow debug logging
     BoardShim.enable_dev_board_logger()
 
     # Initialize the UI
     app = QtWidgets.QApplication([])
-    ui = UI()
+    ui = UI(socket_server)  # Pass the SocketServer instance to the UI
     ui.init_ui()
     ui.show()
 
@@ -37,7 +38,7 @@ def main():
     ssvep_analyzer = SSVEPAnalyzer(
         frequencies=frequencies,
         controls=controls,
-        socket_server=socket_server,
+        socket_server=socket_server,  # Pass the SocketServer instance
         ui=ui  # Pass the UI instance to the analyzer
     )
 

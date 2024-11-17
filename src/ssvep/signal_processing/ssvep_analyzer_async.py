@@ -105,8 +105,8 @@ class SSVEPAnalyzer:
 
         # Map board type text to BoardIds
         board_type_mapping = {
-            "SYNTHETIC_BOARD": BoardIds.SYNTHETIC_BOARD.value,
-            "NEUROPAWN_KNIGHT_BOARD": BoardIds.NEUROPAWN_KNIGHT_BOARD.value
+            "Synthetic Board": BoardIds.SYNTHETIC_BOARD.value,
+            "NeuroPawn Knight Board": BoardIds.NEUROPAWN_KNIGHT_BOARD.value
         }
 
         # Initialize BrainFlowInputParams
@@ -197,20 +197,21 @@ class SSVEPAnalyzer:
 
     # prepares the board session and enables the EEG channels
     async def initialize(self) -> None:
-        print("Initializing channels...")
-        self.board_shim.prepare_session()  # prepares the EEG board for streaming
-        await asyncio.sleep(1)
-        self.board_shim.start_stream(self.buffer_size)  # starts data streaming
-        await asyncio.sleep(1)
-        if self.board_shim.board_id != -1: # Do not send serial init commands if using simulated board
-            for channel in self.channels:
-                self.board_shim.config_board(
-                    f"chon_{channel}_{self.gain_value}"
-                )  # enable channel
-                await asyncio.sleep(1)
-                self.board_shim.config_board(f"rldadd_{channel}")  # enable rdl for channel
-                print(f"Enabled channel {channel} with gain {self.gain_value}.")
-                await asyncio.sleep(1)
+        for board_shim in [self.board_shim1, self.board_shim2]:
+            print("Initializing channels...")
+            board_shim.prepare_session()  # prepares the EEG board for streaming
+            await asyncio.sleep(1)
+            board_shim.start_stream(self.buffer_size)  # starts data streaming
+            await asyncio.sleep(1)
+            if board_shim.board_id != -1: # Do not send serial init commands if using simulated board
+                for channel in self.channels:
+                    board_shim.config_board(
+                        f"chon_{channel}_{self.gain_value}"
+                    )  # enable channel
+                    await asyncio.sleep(1)
+                    board_shim.config_board(f"rldadd_{channel}")  # enable rdl for channel
+                    print(f"Enabled channel {channel} with gain {self.gain_value}.")
+                    await asyncio.sleep(1)
 
     # main function to start data acquisition, processing, and SSVEP classification.
     async def run(self) -> None:
@@ -386,6 +387,10 @@ class SSVEPAnalyzer:
             if self.controls:
                 command = self.controls[predicted_label_fbcca]
                 await self.send_command(command)
+            
+            # Send command to socket server
+            if command and self.socket_server and self.socket_server.running:
+                self.socket_server.send(command)
             
             # Send data to the UI
             await self.data_queue.put({
