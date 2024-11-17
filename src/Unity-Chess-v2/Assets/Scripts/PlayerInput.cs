@@ -57,37 +57,93 @@ public class PlayerInput : MonoBehaviour
         HandleWASDInput(); // Add WASD input handling
     }
 
-    private void HandleWASDInput()
+    private void HandleWASDInput() //Piece and move Selection 
     {
         bool moved = false;
 
         // Piece Selection
         if(!selected)
         {
+        if(gameManager.gameMode == GameManager.GameMode.Local){ //If gameplay is doubleplayer (Local)
+            if(gameManager.isWhitesTurn){ //If white's turn, normal 
+                if (Input.GetKeyDown(KeyCode.W)) // Move up
+                {
+                    moved = MoveToNextPiece(1, 0);
+                }
+                else if (Input.GetKeyDown(KeyCode.S)) // Move down
+                {
+                    moved = MoveToNextPiece(-1, 0);
+                }
+                else if (Input.GetKeyDown(KeyCode.A)) // Move left
+                {
+                    moved = MoveToNextPiece(0, -1);
+                }
+                else if (Input.GetKeyDown(KeyCode.D)) // Move right
+                {
+                    moved = MoveToNextPiece(0, 1);
+                }
+                else if (Input.GetKeyDown(KeyCode.E)) // Select
+                {
+                    selected = true;
+                    SelectCoord(currentCoord);
+                    moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
+                    currentMoveIndex = 0;
+                    HighlightMove(moves[currentMoveIndex].to);
+                }
+            }
+            else{ //If black's turn, inverse controls.
+                if (Input.GetKeyDown(KeyCode.W)) // Move up
+                {
+                    moved = MoveToNextPiece(-1, 0);
+                }
+                else if (Input.GetKeyDown(KeyCode.S)) // Move down
+                {
+                    moved = MoveToNextPiece(1, 0);
+                }
+                else if (Input.GetKeyDown(KeyCode.A)) // Move left
+                {
+                    moved = MoveToNextPiece(0, 1);
+                }
+                else if (Input.GetKeyDown(KeyCode.D)) // Move right
+                {
+                    moved = MoveToNextPiece(0, -1);
+                }
+                else if (Input.GetKeyDown(KeyCode.E)) // Select
+                {
+                    selected = true;
+                    SelectCoord(currentCoord);
+                    moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
+                    currentMoveIndex = 0;
+                    HighlightMove(moves[currentMoveIndex].to);
+                }
+             }
+            }
+           else{ //Computer gameplay, only should stay as white (bottom)
             if (Input.GetKeyDown(KeyCode.W)) // Move up
-            {
-                moved = MoveToNextPiece(1, 0);
-            }
-            else if (Input.GetKeyDown(KeyCode.S)) // Move down
-            {
-                moved = MoveToNextPiece(-1, 0);
-            }
-            else if (Input.GetKeyDown(KeyCode.A)) // Move left
-            {
-                moved = MoveToNextPiece(0, -1);
-            }
-            else if (Input.GetKeyDown(KeyCode.D)) // Move right
-            {
-                moved = MoveToNextPiece(0, 1);
-            }
-            else if (Input.GetKeyDown(KeyCode.E)) // Select
-            {
-                selected = true;
-                SelectCoord(currentCoord);
-                moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
-                currentMoveIndex = 0;
-                HighlightMove(moves[currentMoveIndex].to);
-            }
+                {
+                    moved = MoveToNextPiece(1, 0);
+                }
+                else if (Input.GetKeyDown(KeyCode.S)) // Move down
+                {
+                    moved = MoveToNextPiece(-1, 0);
+                }
+                else if (Input.GetKeyDown(KeyCode.A)) // Move left
+                {
+                    moved = MoveToNextPiece(0, -1);
+                }
+                else if (Input.GetKeyDown(KeyCode.D)) // Move right
+                {
+                    moved = MoveToNextPiece(0, 1);
+                }
+                else if (Input.GetKeyDown(KeyCode.E)) // Select
+                {
+                    selected = true;
+                    SelectCoord(currentCoord);
+                    moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
+                    currentMoveIndex = 0;
+                    HighlightMove(moves[currentMoveIndex].to);
+                }
+           }      
         }
         // Move Selection
         else
@@ -100,28 +156,79 @@ public class PlayerInput : MonoBehaviour
                 HighlightCurrentCell();
                 return;
             }
-
-            if (Input.GetKeyDown(KeyCode.W))
-            {
-                currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
-                HighlightMove(moves[currentMoveIndex].to);
+            if(gameManager.gameMode == GameManager.GameMode.Local){ //If gameplay is doubleplayer (Local)
+                if(gameManager.isWhitesTurn){ //White's turn, move selecting
+                    if (Input.GetKeyDown(KeyCode.W))
+                    {
+                        currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
+                        HighlightMove(moves[currentMoveIndex].to);
+                    }
+                    else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
+                    {
+                        currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
+                        HighlightMove(moves[currentMoveIndex].to);
+                    }
+                    else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
+                    {
+                        TryMoveToCoord(moves[currentMoveIndex].to);
+                        selected = false;
+                    }
+                    else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
+                    {
+                        selected = false;
+                        DeselectCoord();
+                        HighlightCurrentCell(); // Go back to piece selection
+                    }
+                }
+                else{ //Black's turn, move selecting 
+                    if (Input.GetKeyDown(KeyCode.W))
+                    {
+                        currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
+                        HighlightMove(moves[currentMoveIndex].to);
+                    }
+                    else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
+                    {
+                        currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
+                        HighlightMove(moves[currentMoveIndex].to);
+                    }
+                    else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
+                    {
+                        TryMoveToCoord(moves[currentMoveIndex].to);
+                        selected = false;
+                    }
+                    else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
+                    {
+                        selected = false;
+                        DeselectCoord();
+                        HighlightCurrentCell(); // Go back to piece selection
+                    }
+                }
             }
-            else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
-            {
-                currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
-                HighlightMove(moves[currentMoveIndex].to);
+            else{ //move selection, computer gameplay
+                if (Input.GetKeyDown(KeyCode.W))
+                {
+                    currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
+                    HighlightMove(moves[currentMoveIndex].to);
+                }
+                else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
+                {
+                    currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
+                    HighlightMove(moves[currentMoveIndex].to);
+                }
+                else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
+                {
+                    TryMoveToCoord(moves[currentMoveIndex].to);
+                    selected = false;
+                }
+                else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
+                {
+                    selected = false;
+                    DeselectCoord();
+                    HighlightCurrentCell(); // Go back to piece selection
+                }
             }
-            else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
-            {
-                TryMoveToCoord(moves[currentMoveIndex].to);
-                selected = false;
-            }
-            else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
-            {
-                selected = false;
-                DeselectCoord();
-                HighlightCurrentCell(); // Go back to piece selection
-            }
+            
+            
         }
 
         if (moved)
@@ -186,17 +293,37 @@ public class PlayerInput : MonoBehaviour
                 }
 
                 // Check the column for the topmost piece
-                for (file = 7; file >= 0; file--)
+                if (gameManager.isWhitesTurn)
                 {
-                    int piece = board.GetPieceFromCoord(new Coord(rank, file));
-                    if (piece != Piece.Empty && Piece.PieceColor(piece) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
+                    // Check the column for the topmost piece (White)
+                    for (file = 7; file >= 0; file--) // Top to bottom
                     {
-                        Debug.Log($"Piece found at (rank: {rank}, file: {file})");
-                        currentCoord = new Coord(rank, file);
-                        boardUI.ResetAllSquareColors();
-                        return true;
+                        int piece = board.GetPieceFromCoord(new Coord(rank, file));
+                        if (piece != Piece.Empty && Piece.PieceColor(piece) == Piece.White)
+                        {
+                            Debug.Log($"White piece found at (rank: {rank}, file: {file})");
+                            currentCoord = new Coord(rank, file);
+                            boardUI.ResetAllSquareColors();
+                            return true;
+                        }
                     }
                 }
+                else
+                {
+                    // Check the column for the bottommost piece (Black)
+                    for (file = 0; file <= 7; file++) // Bottom to top
+                    {
+                        int piece = board.GetPieceFromCoord(new Coord(rank, file));
+                        if (piece != Piece.Empty && Piece.PieceColor(piece) == Piece.Black)
+                        {
+                            Debug.Log($"Black piece found at (rank: {rank}, file: {file})");
+                            currentCoord = new Coord(rank, file);
+                            boardUI.ResetAllSquareColors();
+                            return true;
+                        }
+                    }
+                }
+                
             }
         }
 
@@ -308,7 +435,10 @@ public class PlayerInput : MonoBehaviour
                         uiManager.OpenPromotionMenu(coord);
                         return true;
                     }
-
+                    if(gameManager.gameMode == GameManager.GameMode.Local){
+                         gameManager.FlipBoard();
+                    }
+                   
                     selectedCoord = null;
                     gameManager.MoveMade();
 
