@@ -11,3 +11,7 @@ The system utilizes the NeuroPawn EEG Headset, which captures real-time brain si
 By displaying flickering visual cues on the Unity interface that correspond to chess moves, NeuroKnights Gambit translates your focused attention into game actions. Whether you're selecting a piece, choosing where to move, or confirming a decision, your gaze becomes your game controller, making interaction possible without traditional inputs.
 
 All in all, to ensure a seamless experience, the project incorporates robust data logging for EEG signals and classification results, an intuitive User Interface built using Qt5 and our custom Unity chess game, all of which will be made public and open source, and published along with guides on how to use and reproduce it.  We hope that projects like this, where all hardware used adds up to less than $200 will serve to lower the barrier to start exploring neurotechnology. **In fact, working on this project has already helped the five of us—first-year students with no prior experience—delve into the field, and we hope to inspire others to do the same.**
+
+---
+
+**NeuroKnights Gambit** revolutionizes the way you play chess, offering an immersive, hands-free gaming adventure. Experience the future of interactive entertainment, where neurotechnology meets accessibility, and your mind is the ultimate game controller.
