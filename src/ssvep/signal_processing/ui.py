@@ -3,40 +3,98 @@ import asyncio
 from PyQt5 import QtWidgets, QtCore
 import pyqtgraph as pg
 
-class UI:
-    def __init__(self, data_queue):
-        self.data_queue = data_queue
-        self.app = QtWidgets.QApplication(sys.argv)
-        self.loop = asyncio.new_event_loop()
-        asyncio.set_event_loop(self.loop)
+class UI(QtWidgets.QWidget):
+    settings_changed = QtCore.pyqtSignal()
 
+    def __init__(self):
+        super().__init__()
+        self.data_queue = asyncio.Queue()
         self.init_ui()
 
     def init_ui(self):
-        self.win = QtWidgets.QWidget()
-        self.win.setWindowTitle("BrainFlow Plot")
-        self.win.resize(1000, 800)
+        self.setWindowTitle("BrainFlow Plot")
+        self.resize(1200, 1000)
 
-        self.main_layout = QtWidgets.QHBoxLayout(self.win)
-        self.graph_layout_widget = pg.GraphicsLayoutWidget()
-        self.main_layout.addWidget(self.graph_layout_widget, stretch=2)
+        self.main_layout = QtWidgets.QVBoxLayout(self)
 
-        self.controls_widget = QtWidgets.QWidget()
-        self.controls_layout = QtWidgets.QVBoxLayout(self.controls_widget)
-        self.controls_layout.setAlignment(QtCore.Qt.AlignTop)
-        self.main_layout.addWidget(self.controls_widget, stretch=1)
+        # Top layout for settings
+        self.settings_layout = QtWidgets.QHBoxLayout()
+        self.main_layout.addLayout(self.settings_layout)
 
+        self._init_settings()
         self._init_timeseries()
         self._init_controls()
 
-        self.win.show()
+    def _init_settings(self):
+        # Board 1 Settings
+        self.board1_group = QtWidgets.QGroupBox("Board 1 Settings")
+        self.board1_layout = QtWidgets.QFormLayout()
+        self.board1_group.setLayout(self.board1_layout)
+
+        self.board1_type = QtWidgets.QComboBox()
+        self.board1_type.addItems(["SYNTHETIC_BOARD", "NEUROPAWN_KNIGHT_BOARD"])
+        self.board1_type.currentIndexChanged.connect(self.on_board1_type_changed)
+
+        self.board1_port = QtWidgets.QLineEdit()
+        self.board1_port.setEnabled(False)  # Disabled by default
+
+        self.board1_layout.addRow("Board Type:", self.board1_type)
+        self.board1_layout.addRow("COM Port:", self.board1_port)
+
+        # Board 2 Settings
+        self.board2_group = QtWidgets.QGroupBox("Board 2 Settings")
+        self.board2_layout = QtWidgets.QFormLayout()
+        self.board2_group.setLayout(self.board2_layout)
+
+        self.board2_type = QtWidgets.QComboBox()
+        self.board2_type.addItems(["SYNTHETIC_BOARD", "NEUROPAWN_KNIGHT_BOARD"])
+        self.board2_type.currentIndexChanged.connect(self.on_board2_type_changed)
+
+        self.board2_port = QtWidgets.QLineEdit()
+        self.board2_port.setEnabled(False)  # Disabled by default
+
+        self.board2_layout.addRow("Board Type:", self.board2_type)
+        self.board2_layout.addRow("COM Port:", self.board2_port)
+
+        # Connect Button
+        self.connect_button = QtWidgets.QPushButton("Connect")
+        self.connect_button.clicked.connect(self.on_connect_clicked)
+
+        # Add to settings layout
+        self.settings_layout.addWidget(self.board1_group)
+        self.settings_layout.addWidget(self.board2_group)
+        self.settings_layout.addWidget(self.connect_button)
+
+    def on_board1_type_changed(self, index):
+        board_type = self.board1_type.currentText()
+        if board_type == "NEUROPAWN_KNIGHT_BOARD":
+            self.board1_port.setEnabled(True)
+        else:
+            self.board1_port.setEnabled(False)
+
+    def on_board2_type_changed(self, index):
+        board_type = self.board2_type.currentText()
+        if board_type == "NEUROPAWN_KNIGHT_BOARD":
+            self.board2_port.setEnabled(True)
+        else:
+            self.board2_port.setEnabled(False)
+
+    def on_connect_clicked(self):
+        # Emit signal that settings have changed
+        self.settings_changed.emit()
 
     def _init_timeseries(self):
+        self.graph_layout_widget = pg.GraphicsLayoutWidget()
+        self.main_layout.addWidget(self.graph_layout_widget)
+
+        self.num_channels = 16  # Total number of channels (8 per board)
         self.plots = []
         self.curves = []
-        self.data = [[] for _ in range(8)]  # Assuming 8 channels maximum
-        for i in range(8):
+        self.data = [[] for _ in range(self.num_channels)]
+        for i in range(self.num_channels):
             p = self.graph_layout_widget.addPlot(row=i, col=0)
+            p.showAxis('left', False)
+            p.showAxis('bottom', False)
             if i == 0:
                 p.setTitle("TimeSeries Plot")
             self.plots.append(p)
@@ -45,38 +103,42 @@ class UI:
             p.setYRange(-100, 100)  # Adjust as needed
 
     def _init_controls(self):
-        # Implement controls as needed
         # Add a label to display the predicted command
         self.command_label = QtWidgets.QLabel("Predicted Command: None")
         self.command_label.setStyleSheet("font-size: 16px;")
-        self.controls_layout.addWidget(self.command_label)
+        self.main_layout.addWidget(self.command_label)
 
-    def run(self):
-        # Start the event loop and the data update coroutine
-        self.loop.create_task(self.update())
-        self.loop.run_forever()
+        # Timer to update plots
+        self.timer = QtCore.QTimer()
+        self.timer.timeout.connect(self.update_plots)
+        self.timer.start(50)  # Update plots every 50 ms
 
     async def update(self):
         while True:
             data_item = await self.data_queue.get()
             # Check if the data item contains a command
-            if 'command' in data_item:
-                command = data_item['command']
+            if 'predicted_command' in data_item:
+                command = data_item['predicted_command']
                 self.display_command(command)
             # Check if the data item contains EEG data
             if 'eeg_data' in data_item:
                 eeg_data = data_item['eeg_data']
-                # Update the plots with new data
                 for i, channel_data in enumerate(eeg_data):
+                    # Flatten channel_data if necessary
+                    if isinstance(channel_data[0], list):
+                        channel_data = [item for sublist in channel_data for item in sublist]
                     if len(self.data[i]) >= 500:
                         self.data[i] = self.data[i][-499:]
                     self.data[i].extend(channel_data)
-                    self.curves[i].setData(self.data[i])
-            await asyncio.sleep(0.05)  # Adjust as needed
+            await asyncio.sleep(0)  # Yield control to the event loop
+
+    def update_plots(self):
+        # Update the plots with the current data
+        for i in range(len(self.curves)):
+            self.curves[i].setData(self.data[i])
 
     def display_command(self, command):
         self.command_label.setText(f"Predicted Command: {command}")
 
-    def stop(self):
-        self.loop.call_soon_threadsafe(self.loop.stop)
-        self.app.quit()
+    def close(self):
+        super().close()
