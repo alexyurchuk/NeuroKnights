@@ -259,7 +259,7 @@ class SSVEPAnalyzer:
         await self.uninitialize()
 
     # stops the analyzer gracefully when a signal is received.
-    def stop(self) -> None:
+    def stop(self, *args, **kwargs) -> None:
         """Gracefully stop the execution of the SSVEPAnalyzer
 
         _extended_summary_
@@ -278,17 +278,18 @@ class SSVEPAnalyzer:
         self.board_shim.release_session()  # release resources
 
 
-async def listener():
-    while True:
-        print(f"Current variable value:")
+async def listener(ssvep_analyzer: SSVEPAnalyzer):
+    while ssvep_analyzer._run:
+        print(f"Conquerent task....")
         await asyncio.sleep(1)
 
 
 async def main(ssvep_analyzer):
-    await asyncio.gather(ssvep_analyzer.run(), listener())
+    await asyncio.gather(ssvep_analyzer.run())  # , listener(ssvep_analyzer)
 
 
 if __name__ == "__main__":
+    # ================== SSVEPAnalyzer Config ================================
     # define target SSVEP frequencies
     # frequencies = [7, 9, 11, 13, 15, 17]  # 10, 19
     frequencies = [6.66, 7.5, 8.57, 10, 12, 15]
@@ -296,8 +297,6 @@ if __name__ == "__main__":
     controls = ["W", "A", "S", "D", "Q", "E"]
 
     # frequencies = [8, 10, 12, 15]
-
-    # two_player_mode = True
 
     # enable BrainFlow debug logging
     BoardShim.enable_dev_board_logger()
@@ -320,17 +319,16 @@ if __name__ == "__main__":
         6,
         7,
         8,
-    ]  # Todo: Right now this script assumes there are only 3 channels and they are connected to the board in consecutive order
+    ]
     channel_names = ["PO8", "PO4", "O2", "POZ", "Oz", "PO3", "O1", "PO7"]
 
     # create an instance of SSVEPAnalyzer
     ssvep_analyzer = SSVEPAnalyzer(
         board_1, frequencies, channels, channel_names, controls=controls
     )
+    # ================== SSVEPAnalyzer Config ================================
 
     # attach a signal handler for graceful termination
     signal.signal(signal.SIGINT, ssvep_analyzer.stop)
 
-    # run the analyzer
-    # ssvep_analyzer.run()
     asyncio.run(main(ssvep_analyzer=ssvep_analyzer))
