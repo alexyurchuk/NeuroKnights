@@ -90,9 +90,9 @@ public class BoardUI : MonoBehaviour
                 if (rank == 0){
                     TMP_Text fileText = Instantiate(numberPrefab).GetComponent<TMP_Text>();
                     fileText.transform.SetParent(square);
-                    fileText.transform.localPosition = new Vector3(0, 0.5f, 0) * ScaleFactor;
+                    fileText.transform.localPosition = -fileText.transform.forward * ScaleFactor;
                     fileText.text = (file + 1).ToString();
-                    fileText.transform.SetParent(transform.GetChild(1));
+                    fileText.transform.SetParent(transform.GetChild(1)); 
                     fileText.gameObject.name = "File " + (file + 1).ToString();
                 }
 

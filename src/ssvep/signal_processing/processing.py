@@ -42,14 +42,23 @@ class DataProcessor:
             DataFilter.perform_bandpass(
                 data=data[i],
                 sampling_rate=self.sampling_rate,
-                start_freq=6.0,
-                stop_freq=40.0,
+                start_freq=5.5,
+                stop_freq=35.0,
                 order=2,
                 filter_type=FilterTypes.BUTTERWORTH_ZERO_PHASE.value,  # minimal phase distortion
                 ripple=0,
             )
 
             # bandstop (notch) filters to remove powerline noise at 48 Hz to 62 Hz
+            DataFilter.perform_bandstop(
+                data=data[i],
+                sampling_rate=self.sampling_rate,
+                start_freq=0.0,
+                stop_freq=5.0,
+                order=2,
+                filter_type=FilterTypes.BUTTERWORTH_ZERO_PHASE.value,
+                ripple=0,
+            )
             DataFilter.perform_bandstop(
                 data=data[i],
                 sampling_rate=self.sampling_rate,

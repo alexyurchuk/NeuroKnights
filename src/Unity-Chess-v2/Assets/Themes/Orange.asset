@@ -14,6 +14,8 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   lightColor: {r: 1, g: 0.79433966, b: 0.5886792, a: 1}
   darkColor: {r: 1, g: 0.48008958, b: 0.107547104, a: 1}
+  dotSprite: {fileID: 21300000, guid: 0af4055af40bba14a8b5f8537f9b6be2, type: 3}
+  circleSprite: {fileID: 21300000, guid: 7fce89dc2e44a7040a331320941655e9, type: 3}
   lightSelectedColor: {r: 1, g: 0.83679247, b: 0.67358494, a: 1}
   darkSelectedColor: {r: 1, g: 0.6059748, b: 0.32452828, a: 1}
   lightLegalColor: {r: 1, g: 0.6862745, b: 0.37254903, a: 1}
