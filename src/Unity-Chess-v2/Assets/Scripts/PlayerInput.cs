@@ -12,8 +12,12 @@ public class PlayerInput : MonoBehaviour
 
     Coord selectedCoord = null; // Tracks the selected piece
     Coord currentCoord;         // Tracks the highlighted cell with WASD
+<<<<<<< HEAD
     CurrentSelection SelectedText;
     bool mouseDown = false;
+=======
+
+>>>>>>> f6d0fa815f0314b8511df34cc351c4332471931a
     bool selected = false;
 
     private int currentMoveIndex; // Tracks the currently highlighted move during move selection
@@ -32,15 +36,15 @@ public class PlayerInput : MonoBehaviour
         HighlightCurrentCell();
     }
 
-   
-
     private void Update()
     {
+        // Handle keyboard inputs
         if (gameManager.gameMode != GameManager.GameMode.Local && gameManager.isWhitesTurn != gameManager.startPlayerIsWhite)
         {
             return;
         }
 
+<<<<<<< HEAD
         // if (Input.GetMouseButtonDown(0))
         // {
         //     OnMouseDown();
@@ -57,186 +61,147 @@ public class PlayerInput : MonoBehaviour
         // }
 
         HandleWASDInput(); // Add WASD input handling
+=======
+        if (Input.GetKeyDown(KeyCode.W))
+        {
+            MoveUp();
+        }
+        else if (Input.GetKeyDown(KeyCode.S))
+        {
+            MoveDown();
+        }
+        else if (Input.GetKeyDown(KeyCode.A))
+        {
+            MoveLeft();
+        }
+        else if (Input.GetKeyDown(KeyCode.D))
+        {
+            MoveRight();
+        }
+        else if (Input.GetKeyDown(KeyCode.E)) // Assume E is the select key
+        {
+            Select();
+        }
+        else if (Input.GetKeyDown(KeyCode.Q))
+        {
+            Deselect();
+        }
+>>>>>>> f6d0fa815f0314b8511df34cc351c4332471931a
     }
 
-    private void HandleWASDInput() //Piece and move Selection 
+    // Public methods for external socket commands
+    public void MoveUp()
     {
-        bool moved = false;
-
-        // Piece Selection
-        if(!selected)
-        {
-        if(gameManager.gameMode == GameManager.GameMode.Local){ //If gameplay is doubleplayer (Local)
-            if(gameManager.isWhitesTurn){ //If white's turn, normal 
-                if (Input.GetKeyDown(KeyCode.W)) // Move up
-                {
-                    moved = MoveToNextPiece(1, 0);
-                }
-                else if (Input.GetKeyDown(KeyCode.S)) // Move down
-                {
-                    moved = MoveToNextPiece(-1, 0);
-                }
-                else if (Input.GetKeyDown(KeyCode.A)) // Move left
-                {
-                    moved = MoveToNextPiece(0, -1);
-                }
-                else if (Input.GetKeyDown(KeyCode.D)) // Move right
-                {
-                    moved = MoveToNextPiece(0, 1);
-                }
-                else if (Input.GetKeyDown(KeyCode.E)) // Select
-                {
-                    selected = true;
-                    SelectCoord(currentCoord);
-                    moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
-                    currentMoveIndex = 0;
-                    HighlightMove(moves[currentMoveIndex].to);
-                }
+        if (!selected){
+            if (gameManager.isWhitesTurn){
+                HandlePieceSelection(1, 0);
             }
-            else{ //If black's turn, inverse controls.
-                if (Input.GetKeyDown(KeyCode.W)) // Move up
-                {
-                    moved = MoveToNextPiece(-1, 0);
-                }
-                else if (Input.GetKeyDown(KeyCode.S)) // Move down
-                {
-                    moved = MoveToNextPiece(1, 0);
-                }
-                else if (Input.GetKeyDown(KeyCode.A)) // Move left
-                {
-                    moved = MoveToNextPiece(0, 1);
-                }
-                else if (Input.GetKeyDown(KeyCode.D)) // Move right
-                {
-                    moved = MoveToNextPiece(0, -1);
-                }
-                else if (Input.GetKeyDown(KeyCode.E)) // Select
-                {
-                    selected = true;
-                    SelectCoord(currentCoord);
-                    moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
-                    currentMoveIndex = 0;
-                    HighlightMove(moves[currentMoveIndex].to);
-                }
-             }
+            else{
+                HandlePieceSelection(-1, 0);
             }
-           else{ //Computer gameplay, only should stay as white (bottom)
-            if (Input.GetKeyDown(KeyCode.W)) // Move up
-                {
-                    moved = MoveToNextPiece(1, 0);
-                }
-                else if (Input.GetKeyDown(KeyCode.S)) // Move down
-                {
-                    moved = MoveToNextPiece(-1, 0);
-                }
-                else if (Input.GetKeyDown(KeyCode.A)) // Move left
-                {
-                    moved = MoveToNextPiece(0, -1);
-                }
-                else if (Input.GetKeyDown(KeyCode.D)) // Move right
-                {
-                    moved = MoveToNextPiece(0, 1);
-                }
-                else if (Input.GetKeyDown(KeyCode.E)) // Select
-                {
-                    selected = true;
-                    SelectCoord(currentCoord);
-                    moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
-                    currentMoveIndex = 0;
-                    HighlightMove(moves[currentMoveIndex].to);
-                }
-           }      
         }
-        // Move Selection
+        else{
+            HandleMoveSelection(1);
+        }
+    }
+
+    public void MoveDown()
+    {
+        if (!selected)
+        {
+            if (gameManager.isWhitesTurn)
+            {
+                HandlePieceSelection(-1, 0);
+            }
+            else
+            {
+                HandlePieceSelection(1, 0);
+            }
+        }
         else
         {
-            if (moves == null || moves.Count == 0)
+            HandleMoveSelection(-1);
+        }
+    }
+
+    public void MoveLeft()
+    {
+        if (!selected)
+        {
+            if (gameManager.isWhitesTurn)
             {
-                Debug.LogError("No moves to navigate!");
-                selected = false;
-                DeselectCoord();
-                HighlightCurrentCell();
-                return;
+                HandlePieceSelection(0, -1);
             }
-            if(gameManager.gameMode == GameManager.GameMode.Local){ //If gameplay is doubleplayer (Local)
-                if(gameManager.isWhitesTurn){ //White's turn, move selecting
-                    if (Input.GetKeyDown(KeyCode.W))
-                    {
-                        currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
-                        HighlightMove(moves[currentMoveIndex].to);
-                    }
-                    else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
-                    {
-                        currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
-                        HighlightMove(moves[currentMoveIndex].to);
-                    }
-                    else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
-                    {
-                        TryMoveToCoord(moves[currentMoveIndex].to);
-                        selected = false;
-                    }
-                    else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
-                    {
-                        selected = false;
-                        DeselectCoord();
-                        HighlightCurrentCell(); // Go back to piece selection
-                    }
-                }
-                else{ //Black's turn, move selecting 
-                    if (Input.GetKeyDown(KeyCode.W))
-                    {
-                        currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
-                        HighlightMove(moves[currentMoveIndex].to);
-                    }
-                    else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
-                    {
-                        currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
-                        HighlightMove(moves[currentMoveIndex].to);
-                    }
-                    else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
-                    {
-                        TryMoveToCoord(moves[currentMoveIndex].to);
-                        selected = false;
-                    }
-                    else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
-                    {
-                        selected = false;
-                        DeselectCoord();
-                        HighlightCurrentCell(); // Go back to piece selection
-                    }
-                }
+            else
+            {
+                HandlePieceSelection(0, 1);
             }
-            else{ //move selection, computer gameplay
-                if (Input.GetKeyDown(KeyCode.W))
-                {
-                    currentMoveIndex = (currentMoveIndex + 1) % moves.Count;
-                    HighlightMove(moves[currentMoveIndex].to);
-                }
-                else if (Input.GetKeyDown(KeyCode.S)) // Navigate down through moves
-                {
-                    currentMoveIndex = (currentMoveIndex - 1 + moves.Count) % moves.Count;
-                    HighlightMove(moves[currentMoveIndex].to);
-                }
-                else if (Input.GetKeyDown(KeyCode.E)) // Confirm move
-                {
-                    TryMoveToCoord(moves[currentMoveIndex].to);
-                    selected = false;
-                }
-                else if (Input.GetKeyDown(KeyCode.Q)) // Cancel move selection
-                {
-                    selected = false;
-                    DeselectCoord();
-                    HighlightCurrentCell(); // Go back to piece selection
-                }
+        }
+    }
+
+    public void MoveRight()
+    {
+        if (!selected)
+        {
+            if (gameManager.isWhitesTurn)
+            {
+                HandlePieceSelection(0, 1);
             }
-            
-            
+            else
+            {
+                HandlePieceSelection(0, -1);
+            }
+        }
+    }
+
+    public void Select()
+    {
+        if (!selected)
+        {
+            selected = true;
+            SelectCoord(currentCoord);
+            moves = movesHandler.GetLegalMoves(board, currentCoord, gameManager.isWhitesTurn);
+            currentMoveIndex = 0;
+            if (moves != null && moves.Count > 0)
+            {
+                HighlightMove(moves[currentMoveIndex].to);
+            }
+        }
+        else
+        {
+            TryMoveToCoord(moves[currentMoveIndex].to);
+            selected = false;
+            DeselectCoord();
+        }
+    }
+
+    public void Deselect()
+    {
+        selected = false;
+        DeselectCoord();
+        HighlightCurrentCell();
+    }
+
+    // Core logic for piece selection
+    private void HandlePieceSelection(int fileDelta, int rankDelta)
+    {
+        bool moved = MoveToNextPiece(fileDelta, rankDelta);
+        if (moved) HighlightCurrentCell();
+    }
+
+    // Core logic for move selection
+    private void HandleMoveSelection(int direction)
+    {
+        if (moves == null || moves.Count == 0)
+        {
+            selected = false;
+            DeselectCoord();
+            HighlightCurrentCell();
+            return;
         }
 
-        if (moved)
-        {
-            HighlightCurrentCell();
-        }
+        currentMoveIndex = (currentMoveIndex + direction + moves.Count) % moves.Count;
+        HighlightMove(moves[currentMoveIndex].to);
     }
 
     private void HighlightMove(Coord coord)
@@ -251,95 +216,63 @@ public class PlayerInput : MonoBehaviour
         int file = currentCoord.file;
         int rank = currentCoord.rank;
 
-        Debug.Log($"Starting search from (rank: {rank}, file: {file})");
-
         if (fileDelta != 0) // Moving vertically (W or S)
         {
             while (true)
             {
-                Debug.Log("vertical");
-                file += fileDelta; // Move up or down (file is vertical)
+                file += fileDelta;
+                if (file < 0 || file > 7) return false;
 
-                // Wrap around or stop if out of bounds
-                if (file < 0 || file > 7)
-                {
-                    Debug.Log("No valid pieces found in any column.");
-                    return false;
-                }
-
-                // Check if the current square contains a valid piece
                 int piece = board.GetPieceFromCoord(new Coord(rank, file));
                 if (piece != Piece.Empty && Piece.PieceColor(piece) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
                 {
-                    Debug.Log($"Piece found at (rank: {rank}, file: {file})");
                     currentCoord = new Coord(rank, file);
                     boardUI.ResetAllSquareColors();
                     return true;
                 }
-
-                Debug.Log($"No valid pieces in column {file}. Moving to the next column.");
             }
         }
         else if (rankDelta != 0) // Moving horizontally (A or D)
         {
             while (true)
             {
-                Debug.Log("horizontal");
-                rank += rankDelta; // Move left or right (rank is horizontal)
+                rank += rankDelta;
+                if (rank < 0 || rank > 7) return false;
 
-                // Stop if out of bounds
-                if (rank < 0 || rank > 7)
+                for (file = currentCoord.file; file >= 0 && file <= 7; file += rankDelta)
                 {
-                    Debug.Log("Reached the left or right of the board.");
-                    return false;
-                }
-
-                // Check the column for the topmost piece
-                if (gameManager.isWhitesTurn)
-                {
-                    // Check the column for the topmost piece (White)
-                    for (file = 7; file >= 0; file--) // Top to bottom
+                    int piece = board.GetPieceFromCoord(new Coord(rank, file));
+                    if (piece != Piece.Empty && Piece.PieceColor(piece) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
                     {
-                        int piece = board.GetPieceFromCoord(new Coord(rank, file));
-                        if (piece != Piece.Empty && Piece.PieceColor(piece) == Piece.White)
-                        {
-                            Debug.Log($"White piece found at (rank: {rank}, file: {file})");
-                            currentCoord = new Coord(rank, file);
-                            boardUI.ResetAllSquareColors();
-                            return true;
-                        }
+                        currentCoord = new Coord(rank, file);
+                        boardUI.ResetAllSquareColors();
+                        return true;
                     }
                 }
-                else
+                for (file = currentCoord.file; file >= 0 && file <= 7; file -= rankDelta)
                 {
-                    // Check the column for the bottommost piece (Black)
-                    for (file = 0; file <= 7; file++) // Bottom to top
+                    int piece = board.GetPieceFromCoord(new Coord(rank, file));
+                    if (piece != Piece.Empty && Piece.PieceColor(piece) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
                     {
-                        int piece = board.GetPieceFromCoord(new Coord(rank, file));
-                        if (piece != Piece.Empty && Piece.PieceColor(piece) == Piece.Black)
-                        {
-                            Debug.Log($"Black piece found at (rank: {rank}, file: {file})");
-                            currentCoord = new Coord(rank, file);
-                            boardUI.ResetAllSquareColors();
-                            return true;
-                        }
+                        currentCoord = new Coord(rank, file);
+                        boardUI.ResetAllSquareColors();
+                        return true;
                     }
                 }
-                
             }
         }
 
-        return false; // Fallback case (shouldn't happen)
+        return false;
     }
 
     private void HighlightCurrentCell()
     {
-        // Highlight the cell at the currentCoord
         boardUI.SelectSquare(currentCoord);
         SelectedText.CurrentMove(currentCoord);
 
     }
 
+<<<<<<< HEAD
     // private void OnMouseDown()
     // {
     //     mouseDown = true;
@@ -403,6 +336,8 @@ public class PlayerInput : MonoBehaviour
     //     }
     // }
 
+=======
+>>>>>>> f6d0fa815f0314b8511df34cc351c4332471931a
     private void SelectCoord(Coord coord)
     {
         selectedCoord = coord;
@@ -425,7 +360,6 @@ public class PlayerInput : MonoBehaviour
     private bool TryMoveToCoord(Coord coord)
     {
         List<Move> moves = movesHandler.GetLegalMoves(board, selectedCoord, gameManager.isWhitesTurn);
-        // If move is legal
         if (moves != null)
         {
             foreach (Move move in moves)
@@ -439,13 +373,8 @@ public class PlayerInput : MonoBehaviour
                         uiManager.OpenPromotionMenu(coord);
                         return true;
                     }
-                    if(gameManager.gameMode == GameManager.GameMode.Local){
-                         gameManager.FlipBoard();
-                    }
-                   
-                    selectedCoord = null;
                     gameManager.MoveMade();
-
+                    gameManager.FlipBoard();
                     return true;
                 }
             }
@@ -453,28 +382,6 @@ public class PlayerInput : MonoBehaviour
 
         return false;
     }
-
-    public bool TryGetSquare(Vector2 pos, out Coord coord)
-    {
-        int rank = Mathf.RoundToInt(pos.x + 3.5f);
-        int file = Mathf.RoundToInt(pos.y + 3.5f);
-
-        if (gameManager.boardFlipped)
-        {
-            rank = 7 - rank;
-            file = 7 - file;
-        }
-
-        coord = new Coord(rank, file);
-
-        if (rank < 0 || rank > 7 || file < 0 || file > 7)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     public void PromoteAfterInput(Coord coord, int piece)
     {
         board.Promote(coord, piece);
