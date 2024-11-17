@@ -1,6 +1,6 @@
 <p align="center"><img src="static/img/logo_white.png" alt="NeuroKnights Logo" width="200"/></p>
 
-<h1 align="center">NeuroKnights Gambit<br></h1>
+<h1 align="center">NeuroKnights Gambit</h1>
 <h2 align="center>Revolutionizing Chess Through Mind Control</h2>
 
 <br> 
