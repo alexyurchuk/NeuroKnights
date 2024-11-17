@@ -8,7 +8,7 @@ Discover a new era of accessible neuroscience with **NeuroKnights Gambit** — a
 
 
 ***Please note that the following information is simply for more insight into our project.***
-### ‎ 
+#### ‎ 
 ## How does it work?
 
 ### **1. Brain Signal Acquisition**
@@ -33,7 +33,7 @@ The classified outputs from the SSVEPAnalyzer are integrated into Unity, where t
 ## **Challenges and Innovations**
 One of the greatest challenges we faced during this project was achieving accurate classification of the SSVEP stimuli frequency by distinguishing when no stimuli were present. To address this challenge, we developed a hybrid classification pipeline, which combines Filter Bank Canonical Correlation Analysis (FBCCA), a method that enhances signal detection across multiple frequency bands by applying bandpass filters. As well, Power Spectral Density (PSD) was implemented for robust feature extraction. We trained a K-Nearest Neighbors (KNN) classifier for precise and reliable classification of both stimuli-induced and non-stimuli states. This combined approach proved effective in improving accuracy and robustness, particularly in noisy or real-world conditions. Another challenge was integrating the BCI system with Unity, requiring seamless communication between EEG classification outputs and game logic. The project's modular design allowed for efficient troubleshooting and scalability, ensuring a functional and adaptable system. 
 
-### ‎ 
+#### ‎ 
 ## **Credit**
 
 ### **Research Papers:** 
