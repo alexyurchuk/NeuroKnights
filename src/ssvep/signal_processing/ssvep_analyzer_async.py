@@ -18,11 +18,14 @@ import signal
 import serial.tools.list_ports
 import recording  # custom module for data recording
 import asyncio
+import threading 
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
 from analysis import FoCAA  # CCA-based SSVEP classification
-from communicating import SocketServer
+from communications import SocketServer
+from ui import UI  # Import the UI class
+from qasync import QEventLoop  # Import QEventLoop for integrating PyQt and asyncio
 
 
 class SSVEPAnalyzer:
@@ -30,48 +33,155 @@ class SSVEPAnalyzer:
     # initializes the SSVEP Analyzer
     def __init__(
         self,
-        board_shim: BoardShim,
         frequencies: list,
-        channels: list,
-        channel_names: list,
-        # two_players: bool = False,
-        socket_server: SocketServer,
-        second_board_shim: BoardShim = None,
-        gain_value: int = 12,
-        buffer_size: int = 450000,
-        cca_buffer_size: int = 500,
-        n_components: int = 1,
         controls: list = None,
+        socket_server: SocketServer = None,
+        ui: UI = None
     ) -> None:
         """
+        Initializes the SSVEP Analyzer.
+
         Args:
-            board_shim (BoardShim): instance of BrainFlow's BoardShim for data streaming
-            frequencies (list): target SSVEP frequencies in Hz
-            channels (list): EEG channel indices
-            channel_names (list): readable names for the channels
-            gain_value (int, optional): gain value for the EEG channels (default: 12)
-            buffer_size (int, optional): buffer size for the EEG data stream (default: 450000)
-            cca_buffer_size (int, optional): # of samples for CCA analysis (default: 1000)
-            n_components (int, optional): # of CCA components to compute (default: 1)
+            frequencies (list): Target SSVEP frequencies in Hz.
+            controls (list, optional): List of controls corresponding to frequencies.
+            socket_server (SocketServer, optional): Instance of SocketServer for communication.
+            ui (UI, optional): Instance of the UI.
         """
-        self.board_shim = board_shim
-        self.turn = 0  # 0 or 1 based on player number
-        self.second_board_schim = second_board_shim
-        self.frequencies = list(
-            map(float, frequencies)
-        )  # convert frequencies to floats
-        self.sampling_rate = BoardShim.get_sampling_rate(
-            board_id=board_shim.get_board_id()
-        )
-        self.n_components = n_components
-        self.channels = channels  # indices of EEG channels used for analysis
-        self.channel_names = channel_names  # names of the channels
-        self.gain_value = gain_value  # gain value for channel amplification
-        self.buffer_size = buffer_size  # data stream buffer size
-        self.cca_buffer_size = cca_buffer_size  # number of samples per CCA analysis
-        self._run = True  # flag to control the main loop
+        # Store the frequencies and controls
+        self.frequencies = list(map(float, frequencies))
         self.controls = controls
         self.socket_server = socket_server
+
+        # Store the UI instance and connect signals
+        self.ui = ui
+        self.ui.settings_changed.connect(self.on_settings_changed)
+
+        # Initialize variables for two boards
+        self.board_shim1 = None
+        self.board_shim2 = None
+        self.params1 = None
+        self.params2 = None
+
+        self.channels_per_board = 8  # Assuming 8 channels per board
+        self.total_channels = self.channels_per_board * 2
+        self.channels = list(range(self.channels_per_board))  # Channel indices per board
+        self.channel_names = ["Ch{}".format(i + 1) for i in range(self.total_channels)]
+
+        self.gain_value = 12  # Default gain value
+        self.buffer_size = 450000
+        self.cca_buffer_size = 500
+        self.n_components = 1
+        self._run = True
+
+        # Initialize the data queue
+        self.data_queue = self.ui.data_queue
+
+        # Initialize variables for sampling rate
+        self.sampling_rate = None  # Will be set after boards are initialized
+
+        # Initialize other necessary variables
+        self.turn = 0  # 0 or 1 based on player number
+
+        # Flag to indicate if boards are initialized
+        self.boards_initialized = False
+
+        # Initialize the data processor and analysis classes (will be set after sampling rate is known)
+        self.data_processor = None
+        self.focaa_knn = None
+
+    def on_settings_changed(self):
+        """
+        Handler for when the settings are changed in the UI.
+        Initializes or reinitializes the board shims based on new settings.
+        """
+        # Retrieve settings from the UI
+        board1_type_text = self.ui.board1_type.currentText()
+        board2_type_text = self.ui.board2_type.currentText()
+
+        board1_port = self.ui.board1_port.text()
+        board2_port = self.ui.board2_port.text()
+
+        # Map board type text to BoardIds
+        board_type_mapping = {
+            "SYNTHETIC_BOARD": BoardIds.SYNTHETIC_BOARD.value,
+            "NEUROPAWN_KNIGHT_BOARD": BoardIds.NEUROPAWN_KNIGHT_BOARD.value
+        }
+
+        # Initialize BrainFlowInputParams
+        self.params1 = BrainFlowInputParams()
+        self.params2 = BrainFlowInputParams()
+
+        # Set serial port if necessary
+        if board1_type_text == "NEUROPAWN_KNIGHT_BOARD":
+            self.params1.serial_port = board1_port
+        if board2_type_text == "NEUROPAWN_KNIGHT_BOARD":
+            self.params2.serial_port = board2_port
+
+        # Create BoardShim instances
+        self.board_shim1 = BoardShim(board_type_mapping[board1_type_text], self.params1)
+        self.board_shim2 = BoardShim(board_type_mapping[board2_type_text], self.params2)
+
+        # Reinitialize boards asynchronously
+        asyncio.create_task(self.reinitialize_boards())
+
+    async def reinitialize_boards(self):
+        """
+        Reinitializes the boards based on the new settings.
+        """
+        # Stop existing streams if any
+        if self.boards_initialized:
+            if self.board_shim1.is_prepared():
+                self.board_shim1.stop_stream()
+                self.board_shim1.release_session()
+            if self.board_shim2.is_prepared():
+                self.board_shim2.stop_stream()
+                self.board_shim2.release_session()
+
+        # Prepare sessions
+        self.board_shim1.prepare_session()
+        self.board_shim2.prepare_session()
+
+        # Start streams
+        self.board_shim1.start_stream(self.buffer_size)
+        self.board_shim2.start_stream(self.buffer_size)
+
+        # Get sampling rate (assuming both boards have the same sampling rate)
+        self.sampling_rate = self.board_shim1.get_sampling_rate(self.board_shim1.board_id)
+
+        # Initialize data processor and analysis classes
+        self.data_processor = DataProcessor(self.sampling_rate)
+        self.focaa_knn = FoCAA_KNN(
+            self.n_components,
+            self.frequencies,
+            self.sampling_rate,
+            self.cca_buffer_size,
+        )
+
+        # Wait until sufficient data is available
+        while self.board_shim1.get_board_data_count() < self.cca_buffer_size or \
+              self.board_shim2.get_board_data_count() < self.cca_buffer_size:
+            await asyncio.sleep(0.5)
+
+        self.boards_initialized = True
+
+        print("Boards have been reinitialized and are ready.")
+    
+    def execute(self):
+        # Integrate the PyQt event loop with asyncio
+        loop = QEventLoop(self.app)
+        asyncio.set_event_loop(loop)
+        try:
+            with loop:
+                # Schedule the run coroutine
+                asyncio.ensure_future(self.run())
+                loop.run_forever()
+        except KeyboardInterrupt:
+            pass
+
+    def start_ui(self):
+        # Start the UI and pass the data queue
+        self.ui = UI(self.data_queue)
+        self.ui.run()
 
     def switch_turn(self):
         self.turn = 1 if self.turn == 0 else 0
@@ -90,14 +200,15 @@ class SSVEPAnalyzer:
         await asyncio.sleep(1)
         self.board_shim.start_stream(self.buffer_size)  # starts data streaming
         await asyncio.sleep(1)
-        for channel in self.channels:
-            self.board_shim.config_board(
-                f"chon_{channel}_{self.gain_value}"
-            )  # enable channel
-            await asyncio.sleep(1)
-            self.board_shim.config_board(f"rldadd_{channel}")  # enable rdl for channel
-            print(f"Enabled channel {channel} with gain {self.gain_value}.")
-            await asyncio.sleep(1)
+        if self.board_shim.board_id != -1: # Do not send serial init commands if using simulated board
+            for channel in self.channels:
+                self.board_shim.config_board(
+                    f"chon_{channel}_{self.gain_value}"
+                )  # enable channel
+                await asyncio.sleep(1)
+                self.board_shim.config_board(f"rldadd_{channel}")  # enable rdl for channel
+                print(f"Enabled channel {channel} with gain {self.gain_value}.")
+                await asyncio.sleep(1)
 
     # main function to start data acquisition, processing, and SSVEP classification.
     async def run(self) -> None:
@@ -160,17 +271,26 @@ class SSVEPAnalyzer:
         number_of_conseq = 3
         conseq = []
 
+        # Wait for the boards to be initialized
+        while self.board_shim1 is None or self.board_shim2 is None:
+            await asyncio.sleep(0.1)
+
         # main loop for data acquisition and analysis
         while self._run:
-
             # fetch EEG data for analysis (specific channels)
             board_shim = self.get_players_board_schim()
             data = board_shim.get_current_board_data(self.cca_buffer_size)
             samp_timestamps = data[11].T
             samp_timestamps.shape = (samp_timestamps.shape[0], 1)
-            data = data[self.channels]  # dont forget to change this
+            
+            # Fetch data from both boards
+            data1 = self.board_shim1.get_current_board_data(self.cca_buffer_size)
+            data2 = self.board_shim2.get_current_board_data(self.cca_buffer_size)
 
             t_stamp = time.time()  # record the current timestamp
+
+            # Choose correct data based on turn
+            data = data1 if self.turn == 1 else data2
 
             # process the EEG data (filtering, detrending, CAR)
             data = data_processor.process_data(data)
@@ -179,14 +299,17 @@ class SSVEPAnalyzer:
 
             # record preprocessed EEG data
             # eeg_writer.writerows(data)
+
             # recording.record_eeg_data(
             #     writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
             # )
+
 
             # perform SSVEP classification using sklearn-based CCA
             # sk_result = focca_knn.sk_findCorr(self.n_components, data)
 
             # record CCA results with metadata
+
             # recording.record_cca_data(
             #     writer=sk_cca_writer,
             #     cca_coefs=sk_result,
@@ -194,6 +317,7 @@ class SSVEPAnalyzer:
             #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
             #     time=t_stamp,
             # )
+
 
             print("=" * 100)
             # print("Sklearn CCA Result:", sk_result)
@@ -229,6 +353,8 @@ class SSVEPAnalyzer:
             #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
             #     time=t_stamp,
             # )
+
+
 
             print("Custom FBCCA coeff:", custom_result_fbcca)
             # print("Custom FoCCA Result:", custom_result_focca)
@@ -274,15 +400,36 @@ class SSVEPAnalyzer:
             #     self.frequencies[custom_predictedClass],
             # )
 
+            # Send control command if controls are defined
+            if self.controls:
+                command = self.controls[predicted_label_fbcca]
+                await self.send_command(command)
+            
+            # Send data to the UI
+            await self.data_queue.put({
+                'timestamp': t_stamp,
+                'eeg_data': data.tolist(),
+                'sk_result': sk_result.tolist(),
+                'fbcca_result': custom_result_fbcca.tolist(),
+                'predicted_command': command if self.controls else None
+            })
+
             await asyncio.sleep(1)  # pause before the next iteration
 
+
         # finalize and close all files
+
         # recording.uninitialize_writer(eeg_csv_file)
         # recording.uninitialize_writer(sk_cca_csv)
         # recording.uninitialize_writer(fbcca_csv)
         recording.uninitialize_writer(knn_csv)
 
         await self.uninitialize()
+
+    async def send_command(self, command):
+        # Put the command into the data queue for the UI
+        await self.data_queue.put({'command': command})
+
 
     # stops the analyzer gracefully when a signal is received.
     def stop(self, *args, **kwargs) -> None:
@@ -291,7 +438,16 @@ class SSVEPAnalyzer:
         _extended_summary_
         """
         print("Stopping SSVEP Analyzer....")
+
         self._run = False  # terminate the main loop
+
+        # Stop the UI
+        self.ui.close()
+        self.app.quit()
+
+        
+
+        
 
     # disables the channels and stops the board session
     async def uninitialize(self) -> None:
