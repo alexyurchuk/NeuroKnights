@@ -18,16 +18,14 @@ import signal
 import serial.tools.list_ports
 import recording  # custom module for data recording
 import asyncio
-import threading 
+import threading
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
-from analysis import FoCAA_KNN  # CCA-based SSVEP classification
+from analysis import FoCAA  # CCA-based SSVEP classification
 from communications import SocketServer
 from ui import UI  # Import the UI class
 from qasync import QEventLoop  # Import QEventLoop for integrating PyQt and asyncio
-
-
 
 
 class SSVEPAnalyzer:
@@ -38,7 +36,7 @@ class SSVEPAnalyzer:
         frequencies: list,
         controls: list = None,
         socket_server: SocketServer = None,
-        ui: UI = None
+        ui: UI = None,
     ) -> None:
         """
         Initializes the SSVEP Analyzer.
@@ -66,7 +64,9 @@ class SSVEPAnalyzer:
 
         self.channels_per_board = 8  # Assuming 8 channels per board
         self.total_channels = self.channels_per_board * 2
-        self.channels = list(range(self.channels_per_board))  # Channel indices per board
+        self.channels = list(
+            range(self.channels_per_board)
+        )  # Channel indices per board
         self.channel_names = ["Ch{}".format(i + 1) for i in range(self.total_channels)]
 
         self.gain_value = 12  # Default gain value
@@ -148,11 +148,13 @@ class SSVEPAnalyzer:
         self.board_shim2.start_stream(self.buffer_size)
 
         # Get sampling rate (assuming both boards have the same sampling rate)
-        self.sampling_rate = self.board_shim1.get_sampling_rate(self.board_shim1.board_id)
+        self.sampling_rate = self.board_shim1.get_sampling_rate(
+            self.board_shim1.board_id
+        )
 
         # Initialize data processor and analysis classes
         self.data_processor = DataProcessor(self.sampling_rate)
-        self.focaa_knn = FoCAA_KNN(
+        self.focaa_knn = FoCAA(
             self.n_components,
             self.frequencies,
             self.sampling_rate,
@@ -160,14 +162,16 @@ class SSVEPAnalyzer:
         )
 
         # Wait until sufficient data is available
-        while self.board_shim1.get_board_data_count() < self.cca_buffer_size or \
-              self.board_shim2.get_board_data_count() < self.cca_buffer_size:
+        while (
+            self.board_shim1.get_board_data_count() < self.cca_buffer_size
+            or self.board_shim2.get_board_data_count() < self.cca_buffer_size
+        ):
             await asyncio.sleep(0.5)
 
         self.boards_initialized = True
 
         print("Boards have been reinitialized and are ready.")
-    
+
     def execute(self):
         # Integrate the PyQt event loop with asyncio
         loop = QEventLoop(self.app)
@@ -218,30 +222,35 @@ class SSVEPAnalyzer:
         await self.initialize()
 
         # initialize writers for EEG data and CCA results
-        '''
-        eeg_writer, eeg_csv_file = recording.initialize_writer(
-            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\processed_eeg_data",
-            header=self.channel_names + ["Timestamp"],
-        )
-        sk_cca_writer, sk_cca_csv = recording.initialize_writer(
-            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
-            header=self.frequencies + ["Stimuli", "Freq", "Time"],
+        # eeg_writer, eeg_csv_file = recording.initialize_writer(
+        #     file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\processed_eeg_data",
+        #     header=self.channel_names + ["Timestamp"],
+        # )
+        # sk_cca_writer, sk_cca_csv = recording.initialize_writer(
+        #     file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
+        #     header=self.frequencies + ["Stimuli", "Freq", "Time"],
+        # )
+
+        # fbcca_writer, fbcca_csv = recording.initialize_writer(
+        #     file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
+        #     header=self.frequencies + ["Stimuli", "Freq", "Time"],
+        # )
+
+        knn_writer, knn_csv = recording.initialize_writer(
+            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\knn_data_no_s",
+            header=self.frequencies
+            + [f"PSD_{x}" for x in self.frequencies]
+            + ["Stimuli", "Freq", "Time"],
         )
 
-        fbcca_writer, fbcca_csv = recording.initialize_writer(
-            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
-            header=self.frequencies + ["Stimuli", "Freq", "Time"],
-        )
-        '''
-
-        # initialize FoCAA-KNN and DataProcessor
-        focca_knn = FoCAA_KNN(
+        # initialize FoCAA and DataProcessor
+        focca_knn = FoCAA(
             self.n_components,
             self.frequencies,
             self.sampling_rate,
             self.cca_buffer_size,
         )
-        data_processor = DataProcessor(self.sampling_rate)
+        data_processor = DataProcessor(self.sampling_rate, self.frequencies)
 
         # ensure sufficient data is available for processing
         while self.board_shim.get_board_data_count() < self.cca_buffer_size:
@@ -280,7 +289,7 @@ class SSVEPAnalyzer:
             data = board_shim.get_current_board_data(self.cca_buffer_size)
             samp_timestamps = data[11].T
             samp_timestamps.shape = (samp_timestamps.shape[0], 1)
-            
+
             # Fetch data from both boards
             data1 = self.board_shim1.get_current_board_data(self.cca_buffer_size)
             data2 = self.board_shim2.get_current_board_data(self.cca_buffer_size)
@@ -293,30 +302,30 @@ class SSVEPAnalyzer:
             # process the EEG data (filtering, detrending, CAR)
             data = data_processor.process_data(data)
 
+            psd_values = data_processor.get_PSD_values(data.T)
+
             # record preprocessed EEG data
             # eeg_writer.writerows(data)
-            '''
-            recording.record_eeg_data(
-                writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
-            )
-            '''
+
+            # recording.record_eeg_data(
+            #     writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
+            # )
 
             # perform SSVEP classification using sklearn-based CCA
             sk_result = focca_knn.sk_findCorr(self.n_components, data)
 
-            '''
             # record CCA results with metadata
-            recording.record_cca_data(
-                writer=sk_cca_writer,
-                cca_coefs=sk_result,
-                stimuli=False,  # stimuli status (active or not)
-                frequency=0.0,  # TODO: Replace with actual stimulus frequency
-                time=t_stamp,
-            )
-            '''
+
+            # recording.record_cca_data(
+            #     writer=sk_cca_writer,
+            #     cca_coefs=sk_result,
+            #     stimuli=False,  # stimuli status (active or not)
+            #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
+            #     time=t_stamp,
+            # )
 
             print("=" * 100)
-            print("Sklearn CCA Result:", sk_result)
+            # print("Sklearn CCA Result:", sk_result)
 
             # custom_result = []
 
@@ -342,31 +351,42 @@ class SSVEPAnalyzer:
                 type_filter=type_filter,
             )
 
-            '''
-            recording.record_cca_data(
-                writer=fbcca_writer,
-                cca_coefs=custom_result_fbcca,
-                stimuli=False,  # stimuli status (active or not)
-                frequency=0.0,  # TODO: Replace with actual stimulus frequency
-                time=t_stamp,
-            )
-            '''
+            # recording.record_cca_data(
+            #     writer=fbcca_writer,
+            #     cca_coefs=custom_result_fbcca,
+            #     stimuli=False,  # stimuli status (active or not)
+            #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
+            #     time=t_stamp,
+            # )
 
             print("Custom FBCCA coeff:", custom_result_fbcca)
             # print("Custom FoCCA Result:", custom_result_focca)
-            print("=" * 100)
 
             # determine the predicted frequency class
-            sklearn_predictedClass = np.argmax(sk_result)  # adjust for 0-based indexing
-            print("Sklearn CCA prediction: ", sklearn_predictedClass)
-            print(
-                "Sklearn CCA prediction freq: ",
-                self.frequencies[sklearn_predictedClass],
-            )
+            # sklearn_predictedClass = np.argmax(sk_result)  # adjust for 0-based indexing
+            # print("Sklearn CCA prediction: ", sklearn_predictedClass)
+            # print(
+            #     "Sklearn CCA prediction freq: ",
+            #     self.frequencies[sklearn_predictedClass],
+            # )
             print("Custom FBCCA prediction: ", predicted_label_fbcca)
             print(
                 "Custom FBCCA prediction freq: ",
                 self.frequencies[predicted_label_fbcca],
+            )
+
+            print("=" * 100)
+
+            data_for_KNN = np.array([custom_result_fbcca, psd_values])
+
+            data_for_csv = np.concatenate(data_for_KNN)
+
+            recording.record_cca_data(
+                writer=knn_writer,
+                cca_coefs=data_for_csv,
+                stimuli=False,  # stimuli status (active or not)
+                frequency=-1,  # TODO: Replace with actual stimulus frequency
+                time=t_stamp,
             )
 
             # if self.controls:
@@ -393,29 +413,30 @@ class SSVEPAnalyzer:
                 self.socket_server.send(command)
             
             # Send data to the UI
-            await self.data_queue.put({
-                'timestamp': t_stamp,
-                'eeg_data': data.tolist(),
-                'sk_result': sk_result.tolist(),
-                'fbcca_result': custom_result_fbcca.tolist(),
-                'predicted_command': command if self.controls else None
-            })
+            await self.data_queue.put(
+                {
+                    "timestamp": t_stamp,
+                    "eeg_data": data.tolist(),
+                    "sk_result": sk_result.tolist(),
+                    "fbcca_result": custom_result_fbcca.tolist(),
+                    "predicted_command": command if self.controls else None,
+                }
+            )
 
             await asyncio.sleep(1)  # pause before the next iteration
 
-        '''
         # finalize and close all files
-        recording.uninitialize_writer(eeg_csv_file)
-        recording.uninitialize_writer(sk_cca_csv)
-        recording.uninitialize_writer(fbcca_csv)
-        '''
+
+        # recording.uninitialize_writer(eeg_csv_file)
+        # recording.uninitialize_writer(sk_cca_csv)
+        # recording.uninitialize_writer(fbcca_csv)
+        recording.uninitialize_writer(knn_csv)
 
         await self.uninitialize()
 
     async def send_command(self, command):
         # Put the command into the data queue for the UI
-        await self.data_queue.put({'command': command})
-
+        await self.data_queue.put({"command": command})
 
     # stops the analyzer gracefully when a signal is received.
     def stop(self, *args, **kwargs) -> None:
@@ -430,10 +451,6 @@ class SSVEPAnalyzer:
         # Stop the UI
         self.ui.close()
         self.app.quit()
-
-        
-
-        
 
     # disables the channels and stops the board session
     async def uninitialize(self) -> None:

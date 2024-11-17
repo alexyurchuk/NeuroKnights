@@ -17,12 +17,11 @@ import numpy as np
 # Canonical Correlation Analysis (CCA) implementation from the scikit-learn library
 # finds linear relationships b/w two datasets by projecting them into a shared space where the correlation is maximized
 from sklearn.cross_decomposition import CCA
-
 from scipy import signal
 
 
 # class: Frequency-Optimized Canonical Correlation Analysis with K-Nearest Neighbors
-class FoCAA_KNN:
+class FoCAA:
 
     # initializes the FoCAA-KNN model for SSVEP classification
     def __init__(
@@ -134,82 +133,6 @@ class FoCAA_KNN:
 
         # print(result)
         return result
-
-    # ============================================================================================================
-
-    def cca_analysis_beta(self, Xa: np.ndarray, Xb: np.ndarray):
-        """
-        Fits CCA parameters using the standard eigenvalue problem.
-
-        :param Xa: Observations with shape (n_samps, p_dim).
-        :param Xb: Observations with shape (n_samps, q_dim).
-        :return:   Linear transformations Wa and Wb.
-        """
-        inv = np.linalg.inv
-        mm = np.matmul
-
-        N, p = Xa.shape
-        N, q = Xb.shape
-        r = min(p, q)
-
-        Xa -= Xa.mean(axis=0)
-        Xa /= Xa.std(axis=0)
-        Xb -= Xb.mean(axis=0)
-        Xb /= Xb.std(axis=0)
-
-        p = Xa.shape[1]
-        C = np.cov(Xa.T, Xb.T)
-        Caa = C[:p, :p]
-        Cbb = C[p:, p:]
-        Cab = C[:p, p:]
-        Cba = C[p:, :p]
-
-        # Either branch results in: r x r matrix where r = min(p, q).
-        if q < p:
-            M = mm(mm(inv(Cbb), Cba), mm(inv(Caa), Cab))
-        else:
-            M = mm(mm(inv(Caa), Cab), mm(inv(Cbb), Cba))
-
-        # Solving the characteristic equation,
-        #
-        #     det(M - rho^2 I) = 0
-        #
-        # is equivalent to solving for rho^2, which are the eigenvalues of the
-        # matrix.
-        eigvals, eigvecs = np.linalg.eig(M)
-        rhos = np.sqrt(eigvals)
-
-        # Ensure we go through eigenvectors in descending order.
-        inds = (-rhos).argsort()
-        rhos = rhos[inds]
-        eigvals = eigvals[inds]
-        # NumPy returns each eigenvector as a column in a matrix.
-        eigvecs = eigvecs.T[inds].T
-        Wb = eigvecs
-
-        Wa = np.zeros((p, r))
-        for i, (rho, wb_i) in enumerate(zip(rhos, Wb.T)):
-            wa_i = mm(mm(inv(Caa), Cab), wb_i) / rho
-            Wa[:, i] = wa_i
-
-        # Sanity check: canonical correlations are equal to the rhos.
-        Za = np.linalg.norm(mm(Xa, Wa), 2, axis=0)
-        Zb = np.linalg.norm(mm(Xb, Wb), 2, axis=0)
-        print("=" * 100)
-        print("Canonical correlations (Za): ", Za)
-        print("Canonical correlations (Zb): ", Zb)
-        print("=" * 100)
-        CCs = np.zeros(r)
-
-        for i in range(r):
-            za = Za[:, i]
-            zb = Zb[:, i]
-            CCs[i] = np.dot(za, zb)
-        assert np.allclose(CCs, rhos)
-
-        return Wa, Wb
-
-    # ============================================================================================================
 
     def focca_analysis(self, data: np.ndarray, a: list, b: list):
         num_harmonic = 2
