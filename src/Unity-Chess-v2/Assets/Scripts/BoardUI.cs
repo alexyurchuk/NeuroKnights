@@ -17,7 +17,7 @@ public class BoardUI : MonoBehaviour
     // Mesh and sprite renderers
     MeshRenderer[,] squareRenderers;
     public SpriteRenderer[,] pieceRenderers;
-
+    public float ScaleFactor = 0.5f; //determins how small the board is
     private void Start(){
         // Get GameManager
         gm = FindObjectOfType<GameManager>();
@@ -40,8 +40,8 @@ public class BoardUI : MonoBehaviour
                 Transform square = GameObject.CreatePrimitive(PrimitiveType.Quad).transform;
                 square.gameObject.name = $"Square {GetSquareName(coord)}";
                 square.SetParent(transform.GetChild(0));
-                square.localScale = new Vector3(1, 1, 1);
-                square.position = GetPosFromCoord(coord);
+                square.localScale = new Vector3(ScaleFactor,ScaleFactor,1);
+                square.position = GetPosFromCoord(coord) * ScaleFactor; // 0.5 
 
                 // Create mesh on square
                 MeshRenderer mr = square.GetComponent<MeshRenderer>();
@@ -52,7 +52,7 @@ public class BoardUI : MonoBehaviour
                 // Create sprite in square, i.e creating piece 
                 SpriteRenderer sr = new GameObject("Piece").AddComponent<SpriteRenderer>();
                 sr.transform.SetParent(square);
-                sr.transform.localScale = Vector3.one * 0.2f;
+                sr.transform.localScale = Vector3.one * 0.2f * ScaleFactor;
                 sr.transform.localPosition = -sr.transform.forward;
                 pieceRenderers[rank, file] = sr;
 
@@ -61,10 +61,11 @@ public class BoardUI : MonoBehaviour
                 SpriteRenderer dotRenderer = dot.AddComponent<SpriteRenderer>();
                 dotRenderer.sprite = theme.dotSprite;  //Dot Sprite
                 dotRenderer.transform.SetParent(square);
-                dotRenderer.transform.localScale = Vector3.one * 0.3f;  // Adjust size
+                dotRenderer.transform.localScale = Vector3.one * 0.3f * ScaleFactor;  // Adjust dot size
                 dotRenderer.transform.localPosition = -dotRenderer.transform.forward; // Place it at the center of the square
                 Color currentDotAlpha = dotRenderer.color; // Get the current color
                 currentDotAlpha.a = 0.5f;                  // Set the alpha (0.0f to 1.0f)
+
                 dotRenderer.color = currentDotAlpha;  
             
                 dotRenderer.enabled = true; 
@@ -73,7 +74,7 @@ public class BoardUI : MonoBehaviour
                 SpriteRenderer CircleRenderer = Circle.AddComponent<SpriteRenderer>();
                 CircleRenderer.sprite = theme.circleSprite; //Circle sprite
                 CircleRenderer.transform.SetParent(square);
-                CircleRenderer.transform.localScale = Vector3.one * 0.3f;  // Adjust size
+                CircleRenderer.transform.localScale = Vector3.one * 0.3f * ScaleFactor;  // Adjust Circle size, original size, 0.3, currently at half 0.15
                 CircleRenderer.transform.localPosition = -dotRenderer.transform.forward; // Place it at the center of the square
                 Color currentCircleAlpha = CircleRenderer.color; // Get the current color
                 currentCircleAlpha.a = 0.5f;                  // Set the alpha (0.0f to 1.0f)
@@ -89,7 +90,7 @@ public class BoardUI : MonoBehaviour
                 if (rank == 0){
                     TMP_Text fileText = Instantiate(numberPrefab).GetComponent<TMP_Text>();
                     fileText.transform.SetParent(square);
-                    fileText.transform.localPosition = -fileText.transform.forward;
+                    fileText.transform.localPosition = new Vector3(0, 0.5f, 0) * ScaleFactor;
                     fileText.text = (file + 1).ToString();
                     fileText.transform.SetParent(transform.GetChild(1));
                     fileText.gameObject.name = "File " + (file + 1).ToString();
@@ -99,7 +100,7 @@ public class BoardUI : MonoBehaviour
                 if (file == 0){
                     TMP_Text rankText = Instantiate(numberPrefab).GetComponent<TMP_Text>();
                     rankText.transform.SetParent(square);
-                    rankText.transform.localPosition = -rankText.transform.forward;
+                    rankText.transform.localPosition = -rankText.transform.forward * ScaleFactor;
                     rankText.text = ((char)(rank + 65)).ToString();
                     rankText.alignment = TextAlignmentOptions.BottomRight;
                     rankText.transform.SetParent(transform.GetChild(1));
