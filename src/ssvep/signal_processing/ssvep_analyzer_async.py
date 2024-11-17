@@ -17,6 +17,7 @@ import numpy as np
 import signal
 import serial.tools.list_ports
 import recording  # custom module for data recording
+import asyncio
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
@@ -80,37 +81,37 @@ class SSVEPAnalyzer:
         return self.second_board_schim
 
     # prepares the board session and enables the EEG channels
-    def initialize(self) -> None:
+    async def initialize(self) -> None:
         print("Initializing channels...")
         self.board_shim.prepare_session()  # prepares the EEG board for streaming
-        time.sleep(1)
+        await asyncio.sleep(1)
         self.board_shim.start_stream(self.buffer_size)  # starts data streaming
-        time.sleep(1)
+        await asyncio.sleep(1)
         for channel in self.channels:
             self.board_shim.config_board(
                 f"chon_{channel}_{self.gain_value}"
             )  # enable channel
-            time.sleep(1)
+            await asyncio.sleep(1)
             self.board_shim.config_board(f"rldadd_{channel}")  # enable rdl for channel
             print(f"Enabled channel {channel} with gain {self.gain_value}.")
-            time.sleep(1)
+            await asyncio.sleep(1)
 
     # main function to start data acquisition, processing, and SSVEP classification.
-    def run(self) -> None:
-        self.initialize()
+    async def run(self) -> None:
+        await self.initialize()
 
         # initialize writers for EEG data and CCA results
         eeg_writer, eeg_csv_file = recording.initialize_writer(
-            file_name="./data/processed_eeg_data",
+            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\processed_eeg_data",
             header=self.channel_names + ["Timestamp"],
         )
         sk_cca_writer, sk_cca_csv = recording.initialize_writer(
-            file_name="./data/sk_cca_data",
+            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
             header=self.frequencies + ["Stimuli", "Freq", "Time"],
         )
 
         fbcca_writer, fbcca_csv = recording.initialize_writer(
-            file_name="./data/sk_cca_data",
+            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
             header=self.frequencies + ["Stimuli", "Freq", "Time"],
         )
 
@@ -125,7 +126,7 @@ class SSVEPAnalyzer:
 
         # ensure sufficient data is available for processing
         while self.board_shim.get_board_data_count() < self.cca_buffer_size:
-            time.sleep(0.5)
+            await asyncio.sleep(0.5)
 
         # ---------------------- FBCCA Config [BEG] ----------------------
         # a = [0.01, 0.1, 0, 3, 5]
@@ -248,34 +249,43 @@ class SSVEPAnalyzer:
             #     self.frequencies[custom_predictedClass],
             # )
 
-            time.sleep(1)  # pause before the next iteration
+            await asyncio.sleep(1)  # pause before the next iteration
 
         # finalize and close all files
         recording.uninitialize_writer(eeg_csv_file)
         recording.uninitialize_writer(sk_cca_csv)
         recording.uninitialize_writer(fbcca_csv)
 
-        self.uninitialize()
+        await self.uninitialize()
 
     # stops the analyzer gracefully when a signal is received.
-    def stop(self, sig, frame) -> None:
-        """
-        Args:
-            sig: signal type
-            frame: current stack frame
+    def stop(self) -> None:
+        """Gracefully stop the execution of the SSVEPAnalyzer
+
+        _extended_summary_
         """
         print("Stopping SSVEP Analyzer....")
         self._run = False  # terminate the main loop
 
     # disables the channels and stops the board session
-    def uninitialize(self) -> None:
+    async def uninitialize(self) -> None:
         print("Unitializing...")
         for channel in self.channels:
             self.board_shim.config_board(f"choff_{channel}")  # disable channel
             print(f"Disabled channel {channel}.")
-            time.sleep(1)
+            await asyncio.sleep(1)
         self.board_shim.stop_stream()  # stop data streaming
         self.board_shim.release_session()  # release resources
+
+
+async def listener():
+    while True:
+        print(f"Current variable value:")
+        await asyncio.sleep(1)
+
+
+async def main(ssvep_analyzer):
+    await asyncio.gather(ssvep_analyzer.run(), listener())
 
 
 if __name__ == "__main__":
@@ -322,4 +332,5 @@ if __name__ == "__main__":
     signal.signal(signal.SIGINT, ssvep_analyzer.stop)
 
     # run the analyzer
-    ssvep_analyzer.run()
+    # ssvep_analyzer.run()
+    asyncio.run(main(ssvep_analyzer=ssvep_analyzer))
