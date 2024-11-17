@@ -2,28 +2,29 @@ import signal
 import asyncio
 
 from ssvep_analyzer_async import SSVEPAnalyzer
+from communicating import SocketServer
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from functools import partial
 
 
-# def configure_ssvep_analizer():
-
-
-def stop(ssvep_analyzer: SSVEPAnalyzer, sig, frame):
+# Gracefully stop all other async functions....
+def stop(ssvep_analyzer: SSVEPAnalyzer, socket_server: SocketServer, sig, frame):
     print("Stopping the application....")
+    socket_server.close_connection()
     ssvep_analyzer.stop()
-    # Gracefully stop all other async functions....
 
 
-async def main(ssvep_analyzer: SSVEPAnalyzer):
-    await asyncio.gather(
-        ssvep_analyzer.run(),
-    )  # add more async funcs or methods here
+def config():
+    # ================== Communication Setup [BEG] =================================
+    socket_server = SocketServer()
+    # ================== Communication Setup [END] =================================
 
+    # ================== Communication Start [BEG] =================================
+    receive_thread = socket_server.run()
+    # ================== Communication Start [END] =================================
 
-if __name__ == "__main__":
-    # ================== SSVEPAnalyzer Config ================================
+    # ================== SSVEPAnalyzer Config [BEG] ================================
     # define target SSVEP frequencies
     # frequencies = [7, 9, 11, 13, 15, 17]  # 10, 19
     frequencies = [6.66, 7.5, 8.57, 10, 12, 15]
@@ -58,11 +59,32 @@ if __name__ == "__main__":
 
     # create an instance of SSVEPAnalyzer
     ssvep_analyzer = SSVEPAnalyzer(
-        board_1, frequencies, channels, channel_names, controls=controls
+        board_1,
+        frequencies,
+        channels,
+        channel_names,
+        controls=controls,  # TODO add socket_server param
     )
-    # ================== SSVEPAnalyzer Config ================================
+    # ================== SSVEPAnalyzer Config [END] ================================
+
+    # ========== Attach a signal handler for graceful termination [BEG] ============
+    signal.signal(signal.SIGINT, partial(stop, ssvep_analyzer, socket_server))
+    # ========== Attach a signal handler for graceful termination [END] ============
+
+    return ssvep_analyzer
+
+
+async def main():
+    ssvep_analyzer = config()
+
+    await asyncio.gather(
+        ssvep_analyzer.run(),
+    )  # add more async funcs or methods here
+
+
+if __name__ == "__main__":
 
     # attach a signal handler for graceful termination
-    signal.signal(signal.SIGINT, partial(stop, ssvep_analyzer))
+    # signal.signal(signal.SIGINT, partial(stop, ssvep_analyzer))
 
-    asyncio.run(main(ssvep_analyzer=ssvep_analyzer))
+    asyncio.run(main())  # ssvep_analyzer=ssvep_analyzer, socket_server=socket_server
