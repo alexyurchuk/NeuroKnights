@@ -34,7 +34,7 @@ class SSVEPAnalyzer:
         channel_names: list,
         gain_value: int = 12,
         buffer_size: int = 450000,
-        cca_buffer_size: int = 1000,
+        cca_buffer_size: int = 1500,
         n_components: int = 1,
     ) -> None:
         """
@@ -104,6 +104,28 @@ class SSVEPAnalyzer:
         while self.board_shim.get_board_data_count() < self.cca_buffer_size:
             time.sleep(0.5)
 
+        # ---------------------- FBCCA Config [BEG] ----------------------
+        # a = [0.01, 0.1, 0, 3, 5]
+        # b = [0.01, 0.1, 0, 1, 10]
+        a = [0.01]
+        b = [0.001]
+        filter_banks = [
+            [6, 8, 10, 12, 14, 16, 18],
+            [20, 20, 20, 20, 20, 20, 20],
+        ]
+        order = 4  # Define filter order
+        notch_filter = "off"  # on or off
+        filter_active = "on"  # on or off
+        type_filter = "bandpass"  # low, high, bandpass, or bandstop
+        notch_freq = (
+            50  # Define frequency to be removed from the signal for notch filter (Hz)
+        )
+        quality_factor = 20  # Define quality factor for the notch filter
+        # ---------------------- FBCCA Config [END] ----------------------
+
+        number_of_conseq = 3
+        conseq = []
+
         # main loop for data acquisition and analysis
         while self._run:
 
@@ -148,30 +170,47 @@ class SSVEPAnalyzer:
             # custom_result = np.array(custom_result)
 
             # perform custom CCA analysis (manual implementation)
-            a = [0.01, 0.1, 0, 3, 5]
-            b = [0.01, 0.1, 0, 1, 10]
-            custom_result = focca_knn.focca_analysis(data=data, a=a, b=b)
+            # custom_result_focca = focca_knn.focca_analysis(data=data, a=a, b=b)
 
-            print("Custom CCA Result:", custom_result)
+            custom_result_fbcca, predicted_label_fbcca = focca_knn.fbcca_analysis(
+                data=data,
+                a=a,
+                b=b,
+                filter_banks=filter_banks,
+                order=order,
+                notch_freq=notch_freq,
+                quality_factor=quality_factor,
+                filter_active=filter_active,
+                notch_filter=notch_filter,
+                type_filter=type_filter,
+            )
+
+            print("Custom FBCCA coeff:", custom_result_fbcca)
+            # print("Custom FoCCA Result:", custom_result_focca)
             print("=" * 100)
 
             # determine the predicted frequency class
             sklearn_predictedClass = np.argmax(sk_result)  # adjust for 0-based indexing
-            print("Sklearn CCA prediction: ", sklearn_predictedClass + 1)
+            print("Sklearn CCA prediction: ", sklearn_predictedClass)
             print(
                 "Sklearn CCA prediction freq: ",
                 self.frequencies[sklearn_predictedClass],
             )
-
-            custom_predictedClass = (
-                np.argmax(custom_result) + 1
-            )  # adjust for 1-based indexing
-
-            print("Custom FoCCA prediction: ", custom_predictedClass + 1)
+            print("Custom FBCCA prediction: ", predicted_label_fbcca)
             print(
-                "Custom FoCCA prediction freq: ",
-                self.frequencies[custom_predictedClass],
+                "Custom FBCCA prediction freq: ",
+                self.frequencies[predicted_label_fbcca],
             )
+
+            # custom_predictedClass = (
+            #     np.argmax(custom_result_focca) + 1
+            # )  # adjust for 1-based indexing
+
+            # print("Custom FoCCA prediction: ", custom_predictedClass + 1)
+            # print(
+            #     "Custom FoCCA prediction freq: ",
+            #     self.frequencies[custom_predictedClass],
+            # )
 
             time.sleep(1)  # pause before the next iteration
 
@@ -204,7 +243,8 @@ class SSVEPAnalyzer:
 
 if __name__ == "__main__":
     # define target SSVEP frequencies
-    frequencies = [7, 9, 11, 13, 15, 17]  # 10, 19
+    # frequencies = [7, 9, 11, 13, 15, 17]  # 10, 19
+    frequencies = [6.66, 7.5, 8.57, 10, 12, 15]
     # frequencies = [8, 10, 12, 15]
 
     # enable BrainFlow debug logging
@@ -224,8 +264,12 @@ if __name__ == "__main__":
         2,
         3,
         4,
+        5,
+        6,
+        7,
+        8,
     ]  # Todo: Right now this script assumes there are only 3 channels and they are connected to the board in consecutive order
-    channel_names = ["O1", "Oz", "O2", "POZ"]
+    channel_names = ["PO8", "PO4", "O2", "POZ", "Oz", "PO3", "O1", "PO7"]
 
     # create an instance of SSVEPAnalyzer
     ssvep_analyzer = SSVEPAnalyzer(board, frequencies, channels, channel_names)
