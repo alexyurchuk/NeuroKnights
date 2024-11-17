@@ -83,6 +83,10 @@ class FoCAA_KNN:
         reference_signals.append(np.sin(4 * np.pi * target_freq * t))  # sine wave
         reference_signals.append(np.cos(4 * np.pi * target_freq * t))  # cosine wave
 
+        # third frequency components (x3 target frequency)
+        reference_signals.append(np.sin(6 * np.pi * target_freq * t))  # sine wave
+        reference_signals.append(np.cos(6 * np.pi * target_freq * t))  # cosine wave
+
         reference_signals = np.array(reference_signals)
 
         # return a numpy array of shape (4, length)
