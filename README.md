@@ -42,12 +42,28 @@ One of the greatest challenges we faced during this project was achieving accura
 - [Paper 3](https://pmc.ncbi.nlm.nih.gov/articles/PMC9978185/)
 - [Paper 4](https://app.dimensions.ai/details/publication/pub.1155345057?search_mode=content&search_text=motor%20imagery%20AND%20reinforcement%20learning&search_type=kws&search_field=full_search)
 - [Paper 5](https://www.frontiersin.org/journals/computational-neuroscience/articles/10.3389/fncom.2022.882290/full)
-- [Paper 6](https://www.google.ca/)
-- [Paper 7](https://www.google.ca/)
+- [Paper 6](https://www.sciencedirect.com/topics/medicine-and-dentistry/steady-state-visually-evoked-potential#:~:text=Different%20paradigms%20have%20been%20implemented%20so%20far%2C%20such%20as%20P300%20spellers%2C11%20and%20Steady%20State%20Visually%20Evoked%20Potential%20(SSVEP).12%20and%20allow%20the%20user%20to%20drive%20a%20car%2C13%20operate%20robots%2C14%20fly%20a%20helicopter15%20or%20use%20a%20wheelchair.16)
+- [Paper 7](https://pure.mpg.de/rest/items/item_3362321_1/component/file_3362322/content)
+- [Paper 8](https://www.sciencedirect.com/science/article/pii/S1746809423003907)
+- [Paper 9](https://www.sciencedirect.com/science/article/pii/S1746809418301629)
+- [Paper 10](https://pure.mpg.de/rest/items/item_3362321_1/component/file_3362322/content)
+
+### **Articles:** 
+- [Article 1](https://neuraldatascience.io/7-eeg/erp_artifacts.html#muscle-contractions)
+- [Article 2](https://gregorygundersen.com/blog/2018/07/17/cca/)
+- [Article 3](https://pmc.ncbi.nlm.nih.gov/articles/PMC9978185/)
+- [Article 4](https://datascience.stackexchange.com/questions/17134/recurrent-cnn-model-on-eeg-data)
+
+### **Videos:** 
+- [Video 1](https://youtu.be/XQzKG511fNc?si=lfT0tpNW4QEFRY4k)
+- [Video 2](https://www.youtube.com/watch?v=metlFBa_NdQ)
+- [Video 3](https://www.youtube.com/watch?v=UPf4hU2pAV4)
+- [Video 4](https://www.youtube.com/watch?v=8bgvbYVJplM&t=114s)
 
 ### **Hardware Used:**
 - [NeuroPawn EEG Headset + Knight Board](https://neuropawn.tech/products)
-- [Laptop](https://www.google.ca/)
+- [Laptop](https://www.dell.com/en-ca/shop/gaming-laptops-pcs-and-accessories/alienware-m15-r7-gaming-laptop/spd/alienware-m15-r7-gaming-laptop)
 
 ### **Built upon:**
+- [SSVEP & FoCCA-KNN](https://github.com/RezaSaadatyar/SSVEP-based-EEG-signal-processing)
 - [Unity Chess](https://github.com/eliasakesson/Unity-Chess)
