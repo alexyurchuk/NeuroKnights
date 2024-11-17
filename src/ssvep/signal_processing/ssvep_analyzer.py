@@ -12,6 +12,13 @@ Commenter(s): Ivan Costa Neto
 Last Updated: Nov. 15, 2024
 """
 
+
+# ---------------------------------------------------------------------------------------------------------
+#       NOTE: This file is most probably outdated.
+#             The sync version is no longer a subject for updates,
+#             use `main.py` to initiate the main application instead.
+# ---------------------------------------------------------------------------------------------------------
+
 import time
 import numpy as np
 import signal
