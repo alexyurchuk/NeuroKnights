@@ -22,12 +22,10 @@ import threading
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
-from analysis import FoCAA_KNN  # CCA-based SSVEP classification
+from analysis import FoCAA  # CCA-based SSVEP classification
 from communications import SocketServer
 from ui import UI  # Import the UI class
 from qasync import QEventLoop  # Import QEventLoop for integrating PyQt and asyncio
-
-
 
 
 class SSVEPAnalyzer:
@@ -217,30 +215,35 @@ class SSVEPAnalyzer:
         await self.initialize()
 
         # initialize writers for EEG data and CCA results
-        '''
-        eeg_writer, eeg_csv_file = recording.initialize_writer(
-            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\processed_eeg_data",
-            header=self.channel_names + ["Timestamp"],
-        )
-        sk_cca_writer, sk_cca_csv = recording.initialize_writer(
-            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
-            header=self.frequencies + ["Stimuli", "Freq", "Time"],
+        # eeg_writer, eeg_csv_file = recording.initialize_writer(
+        #     file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\processed_eeg_data",
+        #     header=self.channel_names + ["Timestamp"],
+        # )
+        # sk_cca_writer, sk_cca_csv = recording.initialize_writer(
+        #     file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
+        #     header=self.frequencies + ["Stimuli", "Freq", "Time"],
+        # )
+
+        # fbcca_writer, fbcca_csv = recording.initialize_writer(
+        #     file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
+        #     header=self.frequencies + ["Stimuli", "Freq", "Time"],
+        # )
+
+        knn_writer, knn_csv = recording.initialize_writer(
+            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\knn_data_no_s",
+            header=self.frequencies
+            + [f"PSD_{x}" for x in self.frequencies]
+            + ["Stimuli", "Freq", "Time"],
         )
 
-        fbcca_writer, fbcca_csv = recording.initialize_writer(
-            file_name="D:\\natHacks\\NeuroKnights\\src\\ssvep\\signal_processing\\data\\sk_cca_data",
-            header=self.frequencies + ["Stimuli", "Freq", "Time"],
-        )
-        '''
-
-        # initialize FoCAA-KNN and DataProcessor
-        focca_knn = FoCAA_KNN(
+        # initialize FoCAA and DataProcessor
+        focca_knn = FoCAA(
             self.n_components,
             self.frequencies,
             self.sampling_rate,
             self.cca_buffer_size,
         )
-        data_processor = DataProcessor(self.sampling_rate)
+        data_processor = DataProcessor(self.sampling_rate, self.frequencies)
 
         # ensure sufficient data is available for processing
         while self.board_shim.get_board_data_count() < self.cca_buffer_size:
@@ -292,30 +295,32 @@ class SSVEPAnalyzer:
             # process the EEG data (filtering, detrending, CAR)
             data = data_processor.process_data(data)
 
+            psd_values = data_processor.get_PSD_values(data.T)
+
             # record preprocessed EEG data
             # eeg_writer.writerows(data)
-            '''
-            recording.record_eeg_data(
-                writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
-            )
-            '''
+
+            # recording.record_eeg_data(
+            #     writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
+            # )
+
 
             # perform SSVEP classification using sklearn-based CCA
-            sk_result = focca_knn.sk_findCorr(self.n_components, data)
+            # sk_result = focca_knn.sk_findCorr(self.n_components, data)
 
-            '''
             # record CCA results with metadata
-            recording.record_cca_data(
-                writer=sk_cca_writer,
-                cca_coefs=sk_result,
-                stimuli=False,  # stimuli status (active or not)
-                frequency=0.0,  # TODO: Replace with actual stimulus frequency
-                time=t_stamp,
-            )
-            '''
+
+            # recording.record_cca_data(
+            #     writer=sk_cca_writer,
+            #     cca_coefs=sk_result,
+            #     stimuli=False,  # stimuli status (active or not)
+            #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
+            #     time=t_stamp,
+            # )
+
 
             print("=" * 100)
-            print("Sklearn CCA Result:", sk_result)
+            # print("Sklearn CCA Result:", sk_result)
 
             # custom_result = []
 
@@ -341,31 +346,44 @@ class SSVEPAnalyzer:
                 type_filter=type_filter,
             )
 
-            '''
-            recording.record_cca_data(
-                writer=fbcca_writer,
-                cca_coefs=custom_result_fbcca,
-                stimuli=False,  # stimuli status (active or not)
-                frequency=0.0,  # TODO: Replace with actual stimulus frequency
-                time=t_stamp,
-            )
-            '''
+            # recording.record_cca_data(
+            #     writer=fbcca_writer,
+            #     cca_coefs=custom_result_fbcca,
+            #     stimuli=False,  # stimuli status (active or not)
+            #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
+            #     time=t_stamp,
+            # )
+
+
 
             print("Custom FBCCA coeff:", custom_result_fbcca)
             # print("Custom FoCCA Result:", custom_result_focca)
-            print("=" * 100)
 
             # determine the predicted frequency class
-            sklearn_predictedClass = np.argmax(sk_result)  # adjust for 0-based indexing
-            print("Sklearn CCA prediction: ", sklearn_predictedClass)
-            print(
-                "Sklearn CCA prediction freq: ",
-                self.frequencies[sklearn_predictedClass],
-            )
+            # sklearn_predictedClass = np.argmax(sk_result)  # adjust for 0-based indexing
+            # print("Sklearn CCA prediction: ", sklearn_predictedClass)
+            # print(
+            #     "Sklearn CCA prediction freq: ",
+            #     self.frequencies[sklearn_predictedClass],
+            # )
             print("Custom FBCCA prediction: ", predicted_label_fbcca)
             print(
                 "Custom FBCCA prediction freq: ",
                 self.frequencies[predicted_label_fbcca],
+            )
+
+            print("=" * 100)
+
+            data_for_KNN = np.array([custom_result_fbcca, psd_values])
+
+            data_for_csv = np.concatenate(data_for_KNN)
+
+            recording.record_cca_data(
+                writer=knn_writer,
+                cca_coefs=data_for_csv,
+                stimuli=False,  # stimuli status (active or not)
+                frequency=-1,  # TODO: Replace with actual stimulus frequency
+                time=t_stamp,
             )
 
             # if self.controls:
@@ -398,12 +416,13 @@ class SSVEPAnalyzer:
 
             await asyncio.sleep(1)  # pause before the next iteration
 
-        '''
+
         # finalize and close all files
-        recording.uninitialize_writer(eeg_csv_file)
-        recording.uninitialize_writer(sk_cca_csv)
-        recording.uninitialize_writer(fbcca_csv)
-        '''
+
+        # recording.uninitialize_writer(eeg_csv_file)
+        # recording.uninitialize_writer(sk_cca_csv)
+        # recording.uninitialize_writer(fbcca_csv)
+        recording.uninitialize_writer(knn_csv)
 
         await self.uninitialize()
 

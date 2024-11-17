@@ -13,17 +13,23 @@ Last Updated: Nov. 15, 2024
 """
 
 import numpy as np
-from brainflow.data_filter import DataFilter, FilterTypes, DetrendOperations
+from brainflow.data_filter import (
+    DataFilter,
+    FilterTypes,
+    DetrendOperations,
+    WindowOperations,
+)
 
 
 #  initializes the DataProcessor with the given sampling rate
 class DataProcessor:
-    def __init__(self, sampling_rate) -> None:
+    def __init__(self, sampling_rate, frequencies) -> None:
         """
         Args:
             sampling_rate (int): The EEG sampling rate in Hz
         """
         self.sampling_rate = sampling_rate
+        self.frequencies = frequencies
 
     # preprocesses EEG data by detrending, filtering, and applying CAR
     def process_data(self, data: np.ndarray) -> np.ndarray:
@@ -129,3 +135,24 @@ class DataProcessor:
             data_car -= average_potential
 
         return data_car
+
+    def get_PSD_values(self, data: np.ndarray):
+        nfft = DataFilter.get_nearest_power_of_two(self.sampling_rate)
+        psd = DataFilter.get_psd_welch(
+            data,
+            nfft,
+            nfft // 2,
+            self.sampling_rate,
+            WindowOperations.BLACKMAN_HARRIS.value,
+        )
+
+        r = 1.0
+
+        psd_values = []
+
+        for freq in self.frequencies:
+            p = DataFilter.get_band_power(psd, freq - 1, freq + 1)
+            psd_values.append(p)
+
+        psd_values = np.array(psd_values)
+        return psd_values
