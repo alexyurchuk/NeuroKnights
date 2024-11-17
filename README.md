@@ -37,17 +37,17 @@ One of the greatest challenges we faced during this project was achieving accura
 ## **Credit**
 
 ### **Research Papers:** 
-- [Paper 1](https://www.google.ca/)
-- [Paper 2](https://www.google.ca/)
-- [Paper 3](https://www.google.ca/)
-- [Paper 4](https://www.google.ca/)
-- [Paper 5](https://www.google.ca/)
+- [Paper 1](https://www.frontiersin.org/articles/10.3389/fninf.2018.00078/pdf)
+- [Paper 2](https://www.researchgate.net/publication/330478575_An_EOGEEG-Based_Hybrid_Brain-Computer_Interface_for_Chess\\)
+- [Paper 3](https://pmc.ncbi.nlm.nih.gov/articles/PMC9978185/)
+- [Paper 4](https://app.dimensions.ai/details/publication/pub.1155345057?search_mode=content&search_text=motor%20imagery%20AND%20reinforcement%20learning&search_type=kws&search_field=full_search)
+- [Paper 5](https://www.frontiersin.org/journals/computational-neuroscience/articles/10.3389/fncom.2022.882290/full)
 - [Paper 6](https://www.google.ca/)
 - [Paper 7](https://www.google.ca/)
 
 ### **Hardware Used:**
-- [Paper 1](https://www.google.ca/)
-- [Paper 1](https://www.google.ca/)
+- [NeuroPawn EEG Headset + Knight Board](https://neuropawn.tech/products)
+- [Laptop](https://www.google.ca/)
 
 ### **Built upon:**
 - [Unity Chess](https://github.com/eliasakesson/Unity-Chess)
