@@ -28,6 +28,7 @@ For reproducibility and debugging, the project includes robust data logging capa
 ### **6. Integration with Unity**
 The classified outputs from the SSVEPAnalyzer are integrated into Unity, where they directly trigger game logic. For example, when a user focuses on a flicker stimulus associated with a chess piece, the system detects the corresponding frequency and relays the intent to Unity, which highlights the selected piece. Similar workflows handle move selection and confirmation. Unity acts as the visual and logical engine for the chess game, combining real-time brain inputs with traditional game mechanics to create a cohesive and immersive experience. The modular design of the integration allows for scalability, enabling the addition of new features or applications beyond chess.
 
+## ‎ 
 ## **Challenges and Innovations**
 One of the greatest challenges faced during this project was accurately classifying SSVEP frequencies while distinguishing non-stimuli states. To address this, the team developed a hybrid classification pipeline combining *FBCCA* and *PSD* with a **KNN** classifier. This approach improved robustness in noisy conditions, ensuring reliable performance during real-world use. Another challenge was integrating the BCI system with Unity, requiring seamless communication between EEG classification outputs and game logic. The project's modular design allowed for efficient troubleshooting and scalability, ensuring a functional and adaptable system.
 
