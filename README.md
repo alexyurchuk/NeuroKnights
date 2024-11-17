@@ -4,7 +4,7 @@
 
 Discover a new era of accessible neuroscience with **NeuroKnights Gambit** — a groundbreaking project that brings mind-controlled chess to life. Designed for reproducibility, our innovative system empowers even beginners in neurotechnology to control a Unity-powered chess game using only their focus on visual stimuli. By harnessing the power of *Steady-State Visual Evoked Potential* (SSVEP) through a *Brain-Computer Interface* (BCI), players can control gameplay seamlessly without traditional input devices.
 
-[Check out on Devpost how our project did in natHacks2024!](https://devpost.com/software/neuroknights-gambit)
+[Check out on Devpost how our project performed in natHacks2024!](https://devpost.com/software/neuroknights-gambit)
 
 ## How does it work?
 
