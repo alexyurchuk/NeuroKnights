@@ -41,7 +41,7 @@ def config():
     params_1.serial_port = "COM6"  # adjust based on your system configuration
 
     # initialize the EEG board
-    board_1 = BoardShim(BoardIds.NEUROPAWN_KNIGHT_BOARD, params_1)
+    board_1 = BoardShim(BoardIds.SYNTHETIC_BOARD, params_1)
 
     # define EEG channels and their names
     # modify based on your board configuration

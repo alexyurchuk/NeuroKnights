@@ -3,8 +3,7 @@ from PyQt5.QtCore import Qt, QTimer
 from PyQt5.QtWidgets import QApplication, QMainWindow, QLabel, QVBoxLayout, QWidget
 
 # Frequency list in Hz
-frequencies = [6.66, 7.5, 8.57, 10, 10.91, 12, 13.33, 15, 17.14]
-frequencies = [8.0, 10.0, 12.0, 15.0]
+frequencies = [6.66, 8.57, 10, 12, 15, ]
 frequency_index = 0
 
 

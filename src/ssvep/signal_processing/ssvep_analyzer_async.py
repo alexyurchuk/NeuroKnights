@@ -18,11 +18,14 @@ import signal
 import serial.tools.list_ports
 import recording  # custom module for data recording
 import asyncio
+import threading 
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
 from analysis import FoCAA_KNN  # CCA-based SSVEP classification
 from ssvep.signal_processing.SocketServer import SocketServer
+from ui import UI
+
 
 
 class SSVEPAnalyzer:
@@ -72,6 +75,17 @@ class SSVEPAnalyzer:
         self._run = True  # flag to control the main loop
         self.controls = controls
         self.socket_server = socket_server
+
+        # Initialize data queue for communication with UI
+        self.data_queue = asyncio.Queue()
+        # Start the UI in a separate thread
+        self.ui_thread = threading.Thread(target=self.start_ui)
+        self.ui_thread.start()
+
+    def start_ui(self):
+        # Start the UI and pass the data queue
+        self.ui = UI(self.data_queue)
+        self.ui.run()
 
     def switch_turn(self):
         self.turn = 1 if self.turn == 0 else 0
@@ -252,6 +266,20 @@ class SSVEPAnalyzer:
             #     self.frequencies[custom_predictedClass],
             # )
 
+            # Send control command if controls are defined
+            if self.controls:
+                command = self.controls[predicted_label_fbcca]
+                await self.send_command(command)
+            
+            # Prepare data for UI and put it into the queue
+            await self.data_queue.put({
+                'timestamp': t_stamp,
+                'eeg_data': data.tolist(),
+                'sk_result': sk_result.tolist(),
+                'fbcca_result': custom_result_fbcca.tolist(),
+                'predicted_command': command if self.controls else None
+            })
+
             await asyncio.sleep(1)  # pause before the next iteration
 
         # finalize and close all files
@@ -261,6 +289,11 @@ class SSVEPAnalyzer:
 
         await self.uninitialize()
 
+    async def send_command(self, command):
+        # Put the command into the data queue for the UI
+        await self.data_queue.put({'command': command})
+
+
     # stops the analyzer gracefully when a signal is received.
     def stop(self, *args, **kwargs) -> None:
         """Gracefully stop the execution of the SSVEPAnalyzer
@@ -268,7 +301,15 @@ class SSVEPAnalyzer:
         _extended_summary_
         """
         print("Stopping SSVEP Analyzer....")
+
+        # Stop the UI
+        if hasattr(self, 'ui'):
+            self.ui.stop()
+        self.ui_thread.join()
+
         self._run = False  # terminate the main loop
+
+        
 
     # disables the channels and stops the board session
     async def uninitialize(self) -> None:
