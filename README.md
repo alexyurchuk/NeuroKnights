@@ -6,7 +6,7 @@ Discover a new era of accessible neuroscience with **NeuroKnights Gambit** — a
 
 ## How does it work?
 
-The system utilizes the NeuroPawn EEG Headset, which captures real-time brain signals from 8 occipital-lobe electrode channels via BrainFlow. Preprocessing is handled by the `DataProcessor` class, which applies detrending, filtering, and *Common Average Referencing* (CAR) to clean the signals. The FoCAA-KNN framework performs SSVEP classification using *Canonical Correlation Analysis* (CCA), detecting the frequency a user focuses on.
+The system utilizes the NeuroPawn EEG Headset, which captures real-time brain signals from 8 occipital-lobe electrode channels via BrainFlow. Preprocessing is handled by the `DataProcessor` class, which applies detrending, filtering, and *Common Average Referencing* (CAR) to clean the signals. The `FoCAA-KNN` framework performs SSVEP classification using *Canonical Correlation Analysis* (CCA), detecting the frequency a user focuses on.
 
 By displaying flickering visual cues on the Unity interface that correspond to chess moves, NeuroKnights Gambit translates your focused attention into game actions. Whether you're selecting a piece, choosing where to move, or confirming a decision, your gaze becomes your game controller, making interaction possible without traditional inputs.
 
