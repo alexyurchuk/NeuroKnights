@@ -16,3 +16,5 @@ All in all, to ensure a seamless experience, the project incorporates robust dat
 
 ---
 ***Please note that the following information is simply for more insight into our project.***
+
+**Credit** Built upon https://github.com/eliasakesson/Unity-Chess
