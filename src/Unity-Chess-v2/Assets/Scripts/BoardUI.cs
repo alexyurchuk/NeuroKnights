@@ -5,6 +5,7 @@ using TMPro;
 
 public class BoardUI : MonoBehaviour
 {
+    public CurrentSelection SelectedText;
     GameObject[,] squareDots = new GameObject[8, 8];
     GameObject[,] squareCircle = new GameObject[8,8];
     // GameManager reference
@@ -87,20 +88,34 @@ public class BoardUI : MonoBehaviour
                 squareCircle[rank, file] = Circle;
                 squareDots[rank, file] = dot;
                 // Add rank number to left side 1234...
-                if (rank == 0){
+              if (rank == 0)
+                {
                     TMP_Text fileText = Instantiate(numberPrefab).GetComponent<TMP_Text>();
                     fileText.transform.SetParent(square);
-                    fileText.transform.localPosition = -fileText.transform.forward * ScaleFactor;
+
+                    // Adjust the position
+                    Vector3 newPosition = -fileText.transform.forward * ScaleFactor;
+                    newPosition.x += 0.12f; // Move it to the right (adjust value as needed)
+                    newPosition.y -= 0.15f;  // Move it up (adjust value as needed)
+                    fileText.transform.localPosition = newPosition;
+
                     fileText.text = (file + 1).ToString();
-                    fileText.transform.SetParent(transform.GetChild(1)); 
+                    fileText.transform.SetParent(transform.GetChild(1));
                     fileText.gameObject.name = "File " + (file + 1).ToString();
                 }
 
                 // Add rank character to bottom ABCD...
-                if (file == 0){
+                if (file == 0)
+                {
                     TMP_Text rankText = Instantiate(numberPrefab).GetComponent<TMP_Text>();
                     rankText.transform.SetParent(square);
-                    rankText.transform.localPosition = -rankText.transform.forward * ScaleFactor;
+
+                    // Adjust the position
+                    Vector3 newPosition = -rankText.transform.forward * ScaleFactor;
+                    newPosition.x -= 0.2f; // Move it to the right (adjust the value as needed)
+                    newPosition.y += 0.10f;  // Move it up (adjust the value as needed)
+                    rankText.transform.localPosition = newPosition;
+
                     rankText.text = ((char)(rank + 65)).ToString();
                     rankText.alignment = TextAlignmentOptions.BottomRight;
                     rankText.transform.SetParent(transform.GetChild(1));
@@ -110,16 +125,45 @@ public class BoardUI : MonoBehaviour
         }
     }
 
-    public void UpdateBoard(Board board, bool flipBoard){
-        // Rotate board if flipped 
+    public void UpdateBoard(Board board, bool flipBoard)
+    {
+        // Rotate the board
         transform.GetChild(0).localRotation = Quaternion.Euler(0, 0, flipBoard ? 180 : 0);
 
-        // Loop through board squares
+        // Update rank and file text
+        Transform labelsParent = transform.GetChild(1); // Assuming child 1 contains rank/file labels
+
+        foreach (Transform label in labelsParent)
+        {
+            TMP_Text textLabel = label.GetComponent<TMP_Text>();
+            if (textLabel != null)
+            {
+                // Ensure text remains upright
+                label.localRotation = Quaternion.Euler(0, 0, flipBoard ? 0 : 0); // Keep upright
+
+                // Update file labels (numbers)
+                if (label.name.StartsWith("File"))
+                {
+                    int fileIndex = int.Parse(label.name.Split(' ')[1]) - 1; // Extract file index (0-based)
+                    textLabel.text = flipBoard
+                        ? (8 - fileIndex).ToString() // Reverse the file numbering
+                        : (fileIndex + 1).ToString(); // Original numbering
+                }
+                // Update rank labels (letters)
+                else if (label.name.StartsWith("Rank"))
+                {
+                    char rankLetter = label.name.Split(' ')[1][0]; // Extract original rank letter
+                    textLabel.text = flipBoard
+                        ? ((char)('H' - (rankLetter - 'A'))).ToString() // Reverse the rank
+                        : rankLetter.ToString(); // Original lettering
+                }
+            }
+        }
+
+        // Update pieces on the board
         for (int i = 0; i < board.squares.Length; i++)
         {
-            // Get coord
             Coord coord = new Coord(i % 8, i / 8);
-            // Update piece on coord
             UpdatePiece(coord, board.GetPieceFromCoord(coord), flipBoard);
         }
     }
@@ -141,6 +185,7 @@ public class BoardUI : MonoBehaviour
     public void SelectSquare(Coord coord){
         // Set square color to selected theme color
         squareRenderers[coord.rank, coord.file].material.color = (coord.rank + coord.file) % 2 == 0 ? theme.lightSelectedColor : theme.darkSelectedColor;
+        SelectedText.CurrentMove(coord);
     }
 
     public void DeselectSquare(Coord coord){
@@ -212,4 +257,5 @@ public class BoardUI : MonoBehaviour
             Debug.Log(line);
         }
     }
+
 }

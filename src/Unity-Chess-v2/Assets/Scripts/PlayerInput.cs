@@ -12,7 +12,12 @@ public class PlayerInput : MonoBehaviour
 
     Coord selectedCoord = null; // Tracks the selected piece
     Coord currentCoord;         // Tracks the highlighted cell with WASD
+<<<<<<< HEAD
+    CurrentSelection SelectedText;
+    bool mouseDown = false;
+=======
 
+>>>>>>> f6d0fa815f0314b8511df34cc351c4332471931a
     bool selected = false;
 
     private int currentMoveIndex; // Tracks the currently highlighted move during move selection
@@ -39,6 +44,24 @@ public class PlayerInput : MonoBehaviour
             return;
         }
 
+<<<<<<< HEAD
+        // if (Input.GetMouseButtonDown(0))
+        // {
+        //     OnMouseDown();
+        // }
+
+        // if (Input.GetMouseButtonUp(0))
+        // {
+        //     OnMouseUp();
+        // }
+
+        // if (mouseDown)
+        // {
+        //     OnMouseMove();
+        // }
+
+        HandleWASDInput(); // Add WASD input handling
+=======
         if (Input.GetKeyDown(KeyCode.W))
         {
             MoveUp();
@@ -63,6 +86,7 @@ public class PlayerInput : MonoBehaviour
         {
             Deselect();
         }
+>>>>>>> f6d0fa815f0314b8511df34cc351c4332471931a
     }
 
     // Public methods for external socket commands
@@ -244,8 +268,76 @@ public class PlayerInput : MonoBehaviour
     private void HighlightCurrentCell()
     {
         boardUI.SelectSquare(currentCoord);
+        SelectedText.CurrentMove(currentCoord);
+
     }
 
+<<<<<<< HEAD
+    // private void OnMouseDown()
+    // {
+    //     mouseDown = true;
+
+    //     Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+    //     if (TryGetSquare(mousePos, out Coord coord))
+    //     {
+    //         int pieceFromCoord = board.GetPieceFromCoord(coord);
+
+    //         // We have a piece selected, so we want to move it
+    //         if (selectedCoord != null)
+    //         {
+    //             // Try to move to coord
+    //             if (TryMoveToCoord(coord)) return;
+
+    //             // If clicked on own piece and it isn't same, select it
+    //             if (pieceFromCoord != Piece.Empty && Piece.PieceColor(pieceFromCoord) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black) && (coord.rank != selectedCoord.rank || coord.file != selectedCoord.file))
+    //             {
+    //                 SelectCoord(coord);
+    //             }
+    //             // Deselect coord
+    //             else DeselectCoord();
+    //         }
+    //         // We don't have a piece selected, so we want to select it if it's the right player's turn
+    //         else if (Piece.PieceColor(pieceFromCoord) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
+    //         {
+    //             SelectCoord(coord);
+    //         }
+    //     }
+    //     // Clicked outside board, so deselect
+    //     else DeselectCoord();
+    // }
+
+    // private void OnMouseMove()
+    // {
+    //     Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+
+    //     if (selectedCoord == null) return;
+
+    //     SpriteRenderer pieceRenderer = boardUI.pieceRenderers[selectedCoord.rank, selectedCoord.file];
+    //     pieceRenderer.transform.position = new Vector3(mousePos.x, mousePos.y, -pieceRenderer.transform.forward.z * 2);
+    // }
+
+    // private void OnMouseUp()
+    // {
+    //     mouseDown = false;
+
+    //     if (selectedCoord == null) return;
+
+    //     SpriteRenderer pieceRenderer = boardUI.pieceRenderers[selectedCoord.rank, selectedCoord.file];
+    //     pieceRenderer.transform.localPosition = -pieceRenderer.transform.forward;
+
+    //     Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+    //     if (TryGetSquare(mousePos, out Coord coord))
+    //     {
+    //         if (coord.rank != selectedCoord.rank || coord.file != selectedCoord.file)
+    //         {
+    //             TryMoveToCoord(coord);
+    //         }
+    //     }
+    // }
+
+=======
+>>>>>>> f6d0fa815f0314b8511df34cc351c4332471931a
     private void SelectCoord(Coord coord)
     {
         selectedCoord = coord;
