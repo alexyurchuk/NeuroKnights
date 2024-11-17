@@ -32,7 +32,12 @@ The classified outputs from the SSVEPAnalyzer are integrated into Unity, where t
 One of the greatest challenges faced during this project was accurately classifying SSVEP frequencies while distinguishing non-stimuli states. To address this, the team developed a hybrid classification pipeline combining *FBCCA* and *PSD* with a **KNN** classifier. This approach improved robustness in noisy conditions, ensuring reliable performance during real-world use. Another challenge was integrating the BCI system with Unity, requiring seamless communication between EEG classification outputs and game logic. The project's modular design allowed for efficient troubleshooting and scalability, ensuring a functional and adaptable system.
 
 ---
-## **Challenges and Innovations**
+## **Credit**
 
+### **Research Papers:** 
+
+### **Hardware Used:**
+
+### **Built upon:**
 
 **Credit** Built upon https://github.com/eliasakesson/Unity-Chess
