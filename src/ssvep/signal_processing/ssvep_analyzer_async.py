@@ -22,7 +22,7 @@ import asyncio
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
 from analysis import FoCAA_KNN  # CCA-based SSVEP classification
-from communicating import SocketServer
+from ssvep.signal_processing.SocketServer import SocketServer
 
 
 class SSVEPAnalyzer:

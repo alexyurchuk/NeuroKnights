@@ -2,7 +2,7 @@ import signal
 import asyncio
 
 from ssvep_analyzer_async import SSVEPAnalyzer
-from communicating import SocketServer
+from ssvep.signal_processing.SocketServer import SocketServer
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from functools import partial
