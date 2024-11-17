@@ -1,7 +1,7 @@
 <p align="center"><img src="static/img/logo_white.png" alt="NeuroKnights Logo" width="200"/></p>
 
 <h1 align="center">NeuroKnights Gambit: Revolutionizing Chess Through Mind Control</h1>
-<br>
+
 Discover a new era of accessible neuroscience with **NeuroKnights Gambit** — a groundbreaking project that brings mind-controlled chess to life. Designed for reproducibility, our innovative system empowers even beginners in neurotechnology to control a Unity-powered chess game using only their focus on visual stimuli. By harnessing the power of Steady-State Visual Evoked Potential (SSVEP) through a Brain-Computer Interface (BCI), players can control gameplay seamlessly without traditional input devices.
 <br>
 <h2 align="left">How does it work?</h2>
