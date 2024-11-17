@@ -15,33 +15,34 @@ public class ThemeSelector : MonoBehaviour
     private void Start(){
         boardUI = FindObjectOfType<BoardUI>();
 
-        DisplayThemes();
 
-        GetComponentInChildren<Button>(true).onClick.Invoke();
+        boardUI.theme = themes[3];
+        boardUI.ResetAllSquareColors();
     }
 
-    private void DisplayThemes(){
-        foreach (Theme theme in themes)
-        {
-            GameObject themeButton = Instantiate(themePrefab, transform);
-
-            Image[] images = themeButton.GetComponentsInChildren<Image>(true);
-            buttonImages.Add(images[0]);
-            images[1].color = theme.lightColor;
-            images[2].color = theme.darkColor;
-            images[3].color = theme.darkColor;
-            images[4].color = theme.lightColor;
+    // private void DisplayThemes(){
+    //     foreach (Theme theme in themes)
+    //     {
+    //         GameObject themeButton = Instantiate(themePrefab, transform);
+    //         Debug.Log(themes);
+    //         Debug.Log(theme);
+    //         Image[] images = themeButton.GetComponentsInChildren<Image>(true);
+    //         buttonImages.Add(images[0]);
+    //         images[1].color = theme.lightColor;
+    //         images[2].color = theme.darkColor;
+    //         images[3].color = theme.darkColor;
+    //         images[4].color = theme.lightColor;
             
-            themeButton.GetComponent<Button>().onClick.AddListener(() => {
-                boardUI.theme = theme;
-                boardUI.ResetAllSquareColors();
+    //         themeButton.GetComponent<Button>().onClick.AddListener(() => {
+    //             boardUI.theme = theme;
+    //             boardUI.ResetAllSquareColors();
 
-                foreach (Image buttonImage in buttonImages){
-                    buttonImage.enabled = false;
-                }
+    //             foreach (Image buttonImage in buttonImages){
+    //                 buttonImage.enabled = false;
+    //             }
 
-                images[0].enabled = true;
-            });
-        }
-    }
+    //             images[0].enabled = true;
+    //         });
+    //     }
+    // }
 }

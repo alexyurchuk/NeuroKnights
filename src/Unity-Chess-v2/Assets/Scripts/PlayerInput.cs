@@ -12,7 +12,7 @@ public class PlayerInput : MonoBehaviour
 
     Coord selectedCoord = null; // Tracks the selected piece
     Coord currentCoord;         // Tracks the highlighted cell with WASD
-
+    CurrentSelection SelectedText;
     bool mouseDown = false;
     bool selected = false;
 
@@ -41,20 +41,20 @@ public class PlayerInput : MonoBehaviour
             return;
         }
 
-        if (Input.GetMouseButtonDown(0))
-        {
-            OnMouseDown();
-        }
+        // if (Input.GetMouseButtonDown(0))
+        // {
+        //     OnMouseDown();
+        // }
 
-        if (Input.GetMouseButtonUp(0))
-        {
-            OnMouseUp();
-        }
+        // if (Input.GetMouseButtonUp(0))
+        // {
+        //     OnMouseUp();
+        // }
 
-        if (mouseDown)
-        {
-            OnMouseMove();
-        }
+        // if (mouseDown)
+        // {
+        //     OnMouseMove();
+        // }
 
         HandleWASDInput(); // Add WASD input handling
     }
@@ -336,70 +336,72 @@ public class PlayerInput : MonoBehaviour
     {
         // Highlight the cell at the currentCoord
         boardUI.SelectSquare(currentCoord);
+        SelectedText.CurrentMove(currentCoord);
+
     }
 
-    private void OnMouseDown()
-    {
-        mouseDown = true;
+    // private void OnMouseDown()
+    // {
+    //     mouseDown = true;
 
-        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+    //     Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        if (TryGetSquare(mousePos, out Coord coord))
-        {
-            int pieceFromCoord = board.GetPieceFromCoord(coord);
+    //     if (TryGetSquare(mousePos, out Coord coord))
+    //     {
+    //         int pieceFromCoord = board.GetPieceFromCoord(coord);
 
-            // We have a piece selected, so we want to move it
-            if (selectedCoord != null)
-            {
-                // Try to move to coord
-                if (TryMoveToCoord(coord)) return;
+    //         // We have a piece selected, so we want to move it
+    //         if (selectedCoord != null)
+    //         {
+    //             // Try to move to coord
+    //             if (TryMoveToCoord(coord)) return;
 
-                // If clicked on own piece and it isn't same, select it
-                if (pieceFromCoord != Piece.Empty && Piece.PieceColor(pieceFromCoord) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black) && (coord.rank != selectedCoord.rank || coord.file != selectedCoord.file))
-                {
-                    SelectCoord(coord);
-                }
-                // Deselect coord
-                else DeselectCoord();
-            }
-            // We don't have a piece selected, so we want to select it if it's the right player's turn
-            else if (Piece.PieceColor(pieceFromCoord) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
-            {
-                SelectCoord(coord);
-            }
-        }
-        // Clicked outside board, so deselect
-        else DeselectCoord();
-    }
+    //             // If clicked on own piece and it isn't same, select it
+    //             if (pieceFromCoord != Piece.Empty && Piece.PieceColor(pieceFromCoord) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black) && (coord.rank != selectedCoord.rank || coord.file != selectedCoord.file))
+    //             {
+    //                 SelectCoord(coord);
+    //             }
+    //             // Deselect coord
+    //             else DeselectCoord();
+    //         }
+    //         // We don't have a piece selected, so we want to select it if it's the right player's turn
+    //         else if (Piece.PieceColor(pieceFromCoord) == (gameManager.isWhitesTurn ? Piece.White : Piece.Black))
+    //         {
+    //             SelectCoord(coord);
+    //         }
+    //     }
+    //     // Clicked outside board, so deselect
+    //     else DeselectCoord();
+    // }
 
-    private void OnMouseMove()
-    {
-        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+    // private void OnMouseMove()
+    // {
+    //     Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
 
-        if (selectedCoord == null) return;
+    //     if (selectedCoord == null) return;
 
-        SpriteRenderer pieceRenderer = boardUI.pieceRenderers[selectedCoord.rank, selectedCoord.file];
-        pieceRenderer.transform.position = new Vector3(mousePos.x, mousePos.y, -pieceRenderer.transform.forward.z * 2);
-    }
+    //     SpriteRenderer pieceRenderer = boardUI.pieceRenderers[selectedCoord.rank, selectedCoord.file];
+    //     pieceRenderer.transform.position = new Vector3(mousePos.x, mousePos.y, -pieceRenderer.transform.forward.z * 2);
+    // }
 
-    private void OnMouseUp()
-    {
-        mouseDown = false;
+    // private void OnMouseUp()
+    // {
+    //     mouseDown = false;
 
-        if (selectedCoord == null) return;
+    //     if (selectedCoord == null) return;
 
-        SpriteRenderer pieceRenderer = boardUI.pieceRenderers[selectedCoord.rank, selectedCoord.file];
-        pieceRenderer.transform.localPosition = -pieceRenderer.transform.forward;
+    //     SpriteRenderer pieceRenderer = boardUI.pieceRenderers[selectedCoord.rank, selectedCoord.file];
+    //     pieceRenderer.transform.localPosition = -pieceRenderer.transform.forward;
 
-        Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        if (TryGetSquare(mousePos, out Coord coord))
-        {
-            if (coord.rank != selectedCoord.rank || coord.file != selectedCoord.file)
-            {
-                TryMoveToCoord(coord);
-            }
-        }
-    }
+    //     Vector2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
+    //     if (TryGetSquare(mousePos, out Coord coord))
+    //     {
+    //         if (coord.rank != selectedCoord.rank || coord.file != selectedCoord.file)
+    //         {
+    //             TryMoveToCoord(coord);
+    //         }
+    //     }
+    // }
 
     private void SelectCoord(Coord coord)
     {
