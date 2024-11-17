@@ -8,6 +8,7 @@ Discover a new era of accessible neuroscience with **NeuroKnights Gambit** — a
 
 ***Please note that the following information is simply for more insight into our project.***
 
+### ‎ 
 ## How does it work?
 
 ### **1. Brain Signal Acquisition**
