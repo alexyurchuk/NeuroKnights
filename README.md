@@ -46,10 +46,8 @@ One of the greatest challenges we faced during this project was achieving accura
 - [Paper 7](https://www.google.ca/)
 
 ### **Hardware Used:**
-
 - [Paper 1](https://www.google.ca/)
 - [Paper 1](https://www.google.ca/)
 
 ### **Built upon:**
-
 - [Unity Chess](https://github.com/eliasakesson/Unity-Chess)
