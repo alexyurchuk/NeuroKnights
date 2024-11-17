@@ -32,6 +32,8 @@ public class PlayerInput : MonoBehaviour
         HighlightCurrentCell();
     }
 
+   
+
     private void Update()
     {
         if (gameManager.gameMode != GameManager.GameMode.Local && gameManager.isWhitesTurn != gameManager.startPlayerIsWhite)
