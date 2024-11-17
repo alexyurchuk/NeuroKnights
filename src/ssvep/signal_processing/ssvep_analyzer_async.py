@@ -18,7 +18,7 @@ import signal
 import serial.tools.list_ports
 import recording  # custom module for data recording
 import asyncio
-import threading 
+import threading
 
 from brainflow.board_shim import BoardShim, BrainFlowInputParams, BoardIds
 from processing import DataProcessor  # EEG preprocessing
@@ -36,7 +36,7 @@ class SSVEPAnalyzer:
         frequencies: list,
         controls: list = None,
         socket_server: SocketServer = None,
-        ui: UI = None
+        ui: UI = None,
     ) -> None:
         """
         Initializes the SSVEP Analyzer.
@@ -64,7 +64,9 @@ class SSVEPAnalyzer:
 
         self.channels_per_board = 8  # Assuming 8 channels per board
         self.total_channels = self.channels_per_board * 2
-        self.channels = list(range(self.channels_per_board))  # Channel indices per board
+        self.channels = list(
+            range(self.channels_per_board)
+        )  # Channel indices per board
         self.channel_names = ["Ch{}".format(i + 1) for i in range(self.total_channels)]
 
         self.gain_value = 12  # Default gain value
@@ -104,7 +106,7 @@ class SSVEPAnalyzer:
         # Map board type text to BoardIds
         board_type_mapping = {
             "SYNTHETIC_BOARD": BoardIds.SYNTHETIC_BOARD.value,
-            "NEUROPAWN_KNIGHT_BOARD": BoardIds.NEUROPAWN_KNIGHT_BOARD.value
+            "NEUROPAWN_KNIGHT_BOARD": BoardIds.NEUROPAWN_KNIGHT_BOARD.value,
         }
 
         # Initialize BrainFlowInputParams
@@ -146,11 +148,13 @@ class SSVEPAnalyzer:
         self.board_shim2.start_stream(self.buffer_size)
 
         # Get sampling rate (assuming both boards have the same sampling rate)
-        self.sampling_rate = self.board_shim1.get_sampling_rate(self.board_shim1.board_id)
+        self.sampling_rate = self.board_shim1.get_sampling_rate(
+            self.board_shim1.board_id
+        )
 
         # Initialize data processor and analysis classes
         self.data_processor = DataProcessor(self.sampling_rate)
-        self.focaa_knn = FoCAA_KNN(
+        self.focaa_knn = FoCAA(
             self.n_components,
             self.frequencies,
             self.sampling_rate,
@@ -158,14 +162,16 @@ class SSVEPAnalyzer:
         )
 
         # Wait until sufficient data is available
-        while self.board_shim1.get_board_data_count() < self.cca_buffer_size or \
-              self.board_shim2.get_board_data_count() < self.cca_buffer_size:
+        while (
+            self.board_shim1.get_board_data_count() < self.cca_buffer_size
+            or self.board_shim2.get_board_data_count() < self.cca_buffer_size
+        ):
             await asyncio.sleep(0.5)
 
         self.boards_initialized = True
 
         print("Boards have been reinitialized and are ready.")
-    
+
     def execute(self):
         # Integrate the PyQt event loop with asyncio
         loop = QEventLoop(self.app)
@@ -200,13 +206,17 @@ class SSVEPAnalyzer:
         await asyncio.sleep(1)
         self.board_shim.start_stream(self.buffer_size)  # starts data streaming
         await asyncio.sleep(1)
-        if self.board_shim.board_id != -1: # Do not send serial init commands if using simulated board
+        if (
+            self.board_shim.board_id != -1
+        ):  # Do not send serial init commands if using simulated board
             for channel in self.channels:
                 self.board_shim.config_board(
                     f"chon_{channel}_{self.gain_value}"
                 )  # enable channel
                 await asyncio.sleep(1)
-                self.board_shim.config_board(f"rldadd_{channel}")  # enable rdl for channel
+                self.board_shim.config_board(
+                    f"rldadd_{channel}"
+                )  # enable rdl for channel
                 print(f"Enabled channel {channel} with gain {self.gain_value}.")
                 await asyncio.sleep(1)
 
@@ -282,7 +292,7 @@ class SSVEPAnalyzer:
             data = board_shim.get_current_board_data(self.cca_buffer_size)
             samp_timestamps = data[11].T
             samp_timestamps.shape = (samp_timestamps.shape[0], 1)
-            
+
             # Fetch data from both boards
             data1 = self.board_shim1.get_current_board_data(self.cca_buffer_size)
             data2 = self.board_shim2.get_current_board_data(self.cca_buffer_size)
@@ -304,9 +314,8 @@ class SSVEPAnalyzer:
             #     writer=eeg_writer, data=data, samp_timestamps=samp_timestamps
             # )
 
-
             # perform SSVEP classification using sklearn-based CCA
-            # sk_result = focca_knn.sk_findCorr(self.n_components, data)
+            sk_result = focca_knn.sk_findCorr(self.n_components, data)
 
             # record CCA results with metadata
 
@@ -317,7 +326,6 @@ class SSVEPAnalyzer:
             #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
             #     time=t_stamp,
             # )
-
 
             print("=" * 100)
             # print("Sklearn CCA Result:", sk_result)
@@ -353,8 +361,6 @@ class SSVEPAnalyzer:
             #     frequency=0.0,  # TODO: Replace with actual stimulus frequency
             #     time=t_stamp,
             # )
-
-
 
             print("Custom FBCCA coeff:", custom_result_fbcca)
             # print("Custom FoCCA Result:", custom_result_focca)
@@ -404,18 +410,19 @@ class SSVEPAnalyzer:
             if self.controls:
                 command = self.controls[predicted_label_fbcca]
                 await self.send_command(command)
-            
+
             # Send data to the UI
-            await self.data_queue.put({
-                'timestamp': t_stamp,
-                'eeg_data': data.tolist(),
-                'sk_result': sk_result.tolist(),
-                'fbcca_result': custom_result_fbcca.tolist(),
-                'predicted_command': command if self.controls else None
-            })
+            await self.data_queue.put(
+                {
+                    "timestamp": t_stamp,
+                    "eeg_data": data.tolist(),
+                    "sk_result": sk_result.tolist(),
+                    "fbcca_result": custom_result_fbcca.tolist(),
+                    "predicted_command": command if self.controls else None,
+                }
+            )
 
             await asyncio.sleep(1)  # pause before the next iteration
-
 
         # finalize and close all files
 
@@ -428,8 +435,7 @@ class SSVEPAnalyzer:
 
     async def send_command(self, command):
         # Put the command into the data queue for the UI
-        await self.data_queue.put({'command': command})
-
+        await self.data_queue.put({"command": command})
 
     # stops the analyzer gracefully when a signal is received.
     def stop(self, *args, **kwargs) -> None:
@@ -444,10 +450,6 @@ class SSVEPAnalyzer:
         # Stop the UI
         self.ui.close()
         self.app.quit()
-
-        
-
-        
 
     # disables the channels and stops the board session
     async def uninitialize(self) -> None:
