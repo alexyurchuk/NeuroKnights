@@ -10,7 +10,7 @@ Commenter(s): Ivan Costa Neto
 Last Updated: Nov. 16, 2024
 """
 
-from ssvep.signal_processing.ssvep_analyzer import analyze_eeg_and_control, setup_board  # import functions from svvep_analyzer.py
+from ssvep.signal_processing.archive.ssvep_analyzer import analyze_eeg_and_control, setup_board  # import functions from svvep_analyzer.py
 from pynput.keyboard import Controller  # keyboard mapping 
 
 # mapping and simulation functions
