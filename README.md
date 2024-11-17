@@ -13,3 +13,5 @@ By displaying flickering visual cues on the Unity interface that correspond to c
 All in all, to ensure a seamless experience, the project incorporates robust data logging for EEG signals and classification results, an intuitive User Interface built using Qt5 and our custom Unity chess game.  We hope that projects like this, where all hardware used adds up to less than $200 will serve to lower the barrier to start exploring neurotechnology. **In fact, working on this project has already helped the five of us—first-year students with no prior experience—delve into the field, and we hope to inspire others to do the same.**
 
 **NeuroKnights Gambit** revolutionizes the way you play chess, offering an immersive, hands-free gaming adventure. Experience the future of interactive entertainment, where neurotechnology meets accessibility, and your mind is the ultimate game controller.
+---
+***Please note that the following information is simply for more insight into our project.***
