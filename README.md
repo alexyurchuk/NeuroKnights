@@ -3,12 +3,9 @@
 <h1 align="center">NeuroKnights Gambit</h1>
 <h2 align="center">Revolutionizing Chess Through Mind Control</h2>
 
-
-<br />
 Discover a new era of accessible neuroscience with **NeuroKnights Gambit** — a groundbreaking project that brings mind-controlled chess to life. Designed for reproducibility, our innovative system empowers even beginners in neurotechnology to control a Unity-powered chess game using only their focus on visual stimuli. By harnessing the power of Steady-State Visual Evoked Potential (SSVEP) through a Brain-Computer Interface (BCI), players can control gameplay seamlessly without traditional input devices.
 
-<br />
-<h3 align="left">How does it work?</h3>
+<h2 align="left">How does it work?</h2>
 The system utilizes the NeuroPawn EEG Headset, which captures real-time brain signals from 8 occipital-lobe electrode channels via BrainFlow. Preprocessing is handled by the DataProcessor class, which applies detrending, filtering, and Common Average Referencing (CAR) to clean the signals. The FoCAA-KNN framework performs SSVEP classification using Canonical Correlation Analysis (CCA), detecting the frequency a user focuses on.
 
 By displaying flickering visual cues on the Unity interface that correspond to chess moves, NeuroKnights Gambit translates your focused attention into game actions. Whether you're selecting a piece, choosing where to move, or confirming a decision, your gaze becomes your game controller, making interaction possible without traditional inputs.
